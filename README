@@ -1,0 +1,14 @@
+Yet Another Random Forest
+=========================
+
+An implementation of the random forests machine learning algorithm in C++.
+Currently supports classification only, not fully tested.
+
+Features include:
+Class probability distributions at each node (as opposed to just single votes).
+OOB error rates.
+Feature importance using a permutation test on the OOB samples.
+
+Aims:
+Configurable split rules (currently only one: single feature threshold scored using information gain).
+

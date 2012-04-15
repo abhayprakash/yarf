@@ -257,19 +257,20 @@ public:
      * treeImps: Array of arrays to hold the feature importances from each tree
      */
     void varImp(DoubleArray& imp, std::vector<DoubleArray>& treeImps) const {
-        treeImps.resize(m_data.numFeatures());
+        treeImps.resize(numTrees());
+        std::fill(treeImps.begin(), treeImps.end(),
+                  DoubleArray(m_data.numFeatures()));
 
         // Fill with 0
-        imp.clear();
         imp.resize(m_data.numFeatures());
+        std::fill(imp.begin(), imp.end(), 0);
 
         for (uint ftid = 0; ftid < m_data.numFeatures(); ++ftid) {
             Dataset::Ptr permuted = new PermutedFeatureDataset(m_data, ftid);
-            treeImps[ftid].resize(numTrees());
 
             for (uint i = 0; i < numTrees(); ++i) {
-                treeImps[ftid][i] = m_trees[i]->varImp(*permuted, ftid);
-                imp[ftid] += treeImps[ftid][i];
+                treeImps[i][ftid] = m_trees[i]->varImp(*permuted, ftid);
+                imp[ftid] += treeImps[i][ftid];
             }
         }
 

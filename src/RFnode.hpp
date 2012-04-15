@@ -8,6 +8,7 @@
 #include "RFparameters.hpp"
 #include "RFsplit.hpp"
 #include "RFutils.hpp"
+#include "Logger.hpp"
 #include "output.hpp"
 
 
@@ -31,10 +32,8 @@ public:
            uint depth = 0):
         m_n(ids.size()), m_depth(depth) {
 
-        if (ids.size() < 100) {
-            print("  ", m_depth);
-            printArray(ids);
-        }
+        LOG(Log::DEBUG2) << indent(m_depth * 2)
+                         << "ids: " << arrayToString(ids);
 
         LabelArray ls;
         data.selectLabels(ls, ids);
@@ -46,13 +45,9 @@ public:
 
         DoubleArray dist;
         getClassDistribution(dist, false);
-        print("  ", m_depth);
-        print("counts: ");
-        for (DoubleArray::const_iterator it = dist.begin();
-             it != dist.end(); ++it) {
-            std::cout << " " << *it;
-        }
-        std::cout << std::endl;
+
+        LOG(Log::DEBUG2) << indent(m_depth * 2)
+                         << "counts: " << arrayToString(dist, false);
 
         if (m_split->splitRequired()) {
             splitNode(params, data);
@@ -134,18 +129,10 @@ protected:
         IdArray left, right;
         m_split->splitSamples(left, right);
 
-        // TODO
-        //print("  ", m_depth);
-        //std::cout << "Feature: " << s->getFeatureId()
-        //          << " IG: " << s->getInfoGain()
-        //          << " split-val: " << s->getSplitValue() << std::endl;
-
-        print("  ", m_depth);
-        print("Left\t\n");
+        LOG(Log::DEBUG2) << indent(m_depth * 2) << "Left";
         m_left = new RFnode(params, data, left, m_depth + 1);
 
-        print("  ", m_depth);
-        print("Right\t\n");
+        LOG(Log::DEBUG2) << indent(m_depth * 2) << "Right";
         m_right = new RFnode(params, data, right, m_depth + 1);
     }
 

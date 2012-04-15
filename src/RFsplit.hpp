@@ -8,9 +8,10 @@
 #include <cassert>
 #include <set>
 
+#include "Dataset.hpp"
 #include "RFtypes.hpp"
 #include "RFparameters.hpp"
-#include "Dataset.hpp"
+#include "Logger.hpp"
 
 
 /**
@@ -476,9 +477,9 @@ protected:
             }
 
             // TODO: depth indentation
-            //print("  ", m_depth);
-            //std::cout << "Tested feature: " << r << " IG: " << ig <<
-            //    " split-val: " << s->getSplitValue() << std::endl;
+            //indent(m_depth);
+            LOG(Log::DEBUG2) << "Tested feature: " << r << " IG: " << ig
+                             << " split-val: " << s->getSplitValue();
         }
 
         m_gotSplit = bestig > params.minScore;

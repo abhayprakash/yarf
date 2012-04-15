@@ -16,7 +16,7 @@
 
 #include "DataIO.hpp"
 #include "output.hpp"
-
+#include "Logger.hpp"
 
 void createTestData(FtvalArray& fts, LabelArray& ls, IdArray& ids, uint& ncls)
 {
@@ -53,20 +53,14 @@ void createTestData(FtvalArray& fts, LabelArray& ls, IdArray& ids, uint& ncls)
         ids[i] = i;
     }
 
-    cout << "fts\t";
-    printArray(fts);
-    cout << "ls\t";
-    printArray(ls);
-    cout << "ids\t";
-    printArray(ids);
+    LOG(Log::DEBUG1) << "fts " << arrayToString(fts);
+    LOG(Log::DEBUG1) << "ls " << arrayToString(ls);
+    LOG(Log::DEBUG1) << "ids " << arrayToString(ids);
 }
 
 
 Dataset::Ptr createTestDataset(uint n, uint f)
 {
-    using std::cout;
-    using std::endl;
-
     SingleMatrixDataset* d = new SingleMatrixDataset(n, f);
     Dataset::Ptr pd(d);
 
@@ -80,21 +74,17 @@ Dataset::Ptr createTestDataset(uint n, uint f)
 
             y += x;
         }
-        //y = (y + 20) / 20;
         y = (d->getX(r, 0) + 10) / 10;
         d->setLabel(r, y);
     }
 
     for (uint c = 0; c < d->numFeatures(); ++c)
     {
-        cout << "ft " << c << "\t";
-        printArray(*d->getFeature(c));
+        LOG(Log::DEBUG1) << "ft " << c
+                         << arrayToString(*d->getFeature(c));
     }
-    cout << "ls\t";
-    printArray(*d->getLabels());
-
-    //cout << "ids\t";
-    //printArray(ids);
+    LOG(Log::DEBUG1) << "ls " << arrayToString(*d->getLabels());
+    //LOG(Log::DEBUG1) << "ids " << arrayToString(ids);
 
     return pd;
 }
@@ -109,7 +99,8 @@ Dataset::Ptr openTestDataset(const char file[])
     CsvReader csv;
     bool status = csv.parse(file);
     if (!status) {
-        cerr << "Error parsing " << file << endl;
+        LOG(Log::ERROR) << "Error parsing " << file << endl;
+        //cerr << "Error parsing " << file << endl;
         exit(1);
     }
 
@@ -130,11 +121,10 @@ Dataset::Ptr openTestDataset(const char file[])
 
     for (uint c = 0; c < d->numFeatures(); ++c)
     {
-        cout << "ft " << c << "\t";
-        printArray(*d->getFeature(c));
+        LOG(Log::DEBUG1) << "ft " << c << "\t"
+                         << arrayToString(*d->getFeature(c));
     }
-    cout << "ls\t";
-    printArray(*d->getLabels());
+    LOG(Log::DEBUG1) << "ls " << arrayToString(*d->getLabels());
 
     return pd;
 }
@@ -142,6 +132,9 @@ Dataset::Ptr openTestDataset(const char file[])
 
 bool testRFsplit(const Dataset::Ptr data)
 {
+    using std::cout;
+    using std::endl;
+
     FtvalArray fts;
     LabelArray ls;
     IdArray ids;
@@ -165,9 +158,8 @@ bool testRFsplit(const Dataset::Ptr data)
     printPermutedArray<LabelArray, UintArray>(ls, s->permLeft(), s->permRight());
     printPermutedArray<IdArray, UintArray>(ids, s->permLeft(), s->permRight());
 
-    printArray(s->getInfoGainArray());
-
-    std::cout << "IG: " << ig << " split-val: " << sv << std::endl;
+    cout << arrayToString(s->getInfoGainArray())
+         << "IG: " << ig << " split-val: " << sv << endl;
 
     printPermutedArray<FtvalArray, UintArray>(fts, s->permLeft(), s->permMiddle());
     printPermutedArray<FtvalArray, UintArray>(fts, s->permMiddle(), s->permRight());
@@ -182,14 +174,12 @@ void printTree(const RFnode& t, uint depth = 0)
 
     DoubleArray dist;
     t.getClassDistribution(dist, false);
-    print("  ", depth);
-    cout << "counts: ";
-    printArray(dist, false);
+    cout << indent(depth * 2)
+         << "counts: " << arrayToString(dist, false) << endl;
 
     t.getClassDistribution(dist, true);
-    print("  ", depth);
-    cout << "normalised: ";
-    printArray(dist, false);
+    cout << indent(depth * 2)
+         << "normalised: " << arrayToString(dist, false) << endl;
 
     if (!t.isleaf())
     {
@@ -199,25 +189,25 @@ void printTree(const RFnode& t, uint depth = 0)
         double ig = s->getSplit()->getInfoGain();
         Ftval sv = s->getSplit()->getSplitValue();
         uint ftid = s->getSplit()->getFeatureId();
-        print("  ", depth);
-        cout << "Feature: " << ftid << " split: " << sv << " IG: " << ig <<
-            endl;
+
+        cout << indent(depth * 2) << "Feature: " << ftid
+             << " split: " << sv << " IG: " << ig << endl;
     }
 
     if (t.left() && t.right())
     {
-        print("  ", depth);
-        cout << "Left" << endl;
+        cout << indent(depth * 2) << "Left" << endl;
         printTree(*t.left(), depth + 1);
 
-        print("  ", depth);
-        cout << "Right" << endl;
+        cout << indent(depth * 2) << "Right" << endl;
         printTree(*t.right(), depth + 1);
     }
 }
 
 bool testRFnode(const Dataset::Ptr data)
 {
+    using std::cout;
+
     RFparameters params;
     params.numTrees = 1;
     params.numSplitFeatures = std::ceil(std::sqrt(data->numFeatures()));
@@ -225,20 +215,21 @@ bool testRFnode(const Dataset::Ptr data)
 
     RFtree::Ptr tree = new RFtree(*data, params);
 
-    print("*", 80);
-    print('\n');
+    cout << indent(80, '*') << "\n";
     printTree(*tree->getRoot());
 
     DoubleArray oobErr;
     tree->oobErrors(oobErr);
-    print("\nOOB error\t");
-    printArray(oobErr);
+    cout << "\nOOB error: " << arrayToString(oobErr) << "\n";
 
     return true;
 }
 
 bool testForest(const Dataset::Ptr data)
 {
+    using std::cout;
+    using std::endl;
+
     RFparameters params;
     params.numTrees = 50;
     params.numSplitFeatures = std::ceil(std::sqrt(data->numFeatures()));
@@ -246,44 +237,41 @@ bool testForest(const Dataset::Ptr data)
 
     RFforest forest(*data, params);
 
-    print("*", 80);
+    cout << indent(80, '*');
     for (uint i = 0; i < forest.numTrees(); ++i)
     {
-        std::cout << "\nTree " << i << "\n";
+        cout << "\nTree " << i << "\n";
         printTree(*forest.getTree(i)->getRoot());
     }
 
     std::vector<DoubleArray> treeErrs;
     DoubleArray oobErr;
     forest.oobErrors(oobErr, treeErrs);
-    print('\n');
+    cout << '\n';
     for (uint i = 0; i < treeErrs.size(); ++i)
     {
-        std::cout << "OOB error " << i << "\t";
-        printArray(treeErrs[i]);
+        cout << "OOB error " << i << ":\t"
+             << arrayToString(treeErrs[i]) << "\n";
     }
-    print("\nOOB error\t");
-    printArray(oobErr);
+    cout << "\nOOB error: " << arrayToString(oobErr) << endl;
 
     std::vector<DoubleArray> treeImps;
     DoubleArray imp;
     forest.varImp(imp, treeImps);
-    print('\n');
     for (uint i = 0; i < treeImps.size(); ++i)
     {
-        std::cout << "Feature importance " << i << "\t";
-        printArray(treeImps[i]);
+        cout << "Feature importance " << i << ":\t"
+             << arrayToString(treeImps[i]) << "\n";
     }
-    print("\nFeature importance\t");
-    printArray(imp);
-    std::cout << imp;
+    cout << "\nFeature importance: " << arrayToString(imp) << endl;
 
     return true;
 }
 
 int main(int argc, char* argv[])
 {
-    std::srand(std::time(NULL));
+    Utils::srand();
+    Log::reportingLevel() = Log::INFO;
 
     //testRFsplit(createTestDataset(10, 1));
     //testRFnode(createTestDataset(100, 4));

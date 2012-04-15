@@ -5,54 +5,36 @@
 #define YARF_OUTPUT_HPP
 
 #include <iostream>
+#include <sstream>
 #include "RFtypes.hpp"
 
 
-template<typename T>
-void print(const T& c, uint n = 1) {
-    for (uint i = 0; i < n;++i) {
-        std::cout << c;
-    }
+inline std::string indent(uint n, char c = ' ') {
+    return std::string(n, c);
 }
 
 template<typename ContainerT>
-void printArray(const ContainerT& xs, bool printSize = true,
-                uint p1 = 0, uint p2 = -1)
+std::string arrayToString(const ContainerT& xs, bool printSize = true,
+                          uint p1 = 0, uint p2 = -1)
 {
-    using std::cout;
-    using std::endl;
+    std::ostringstream oss;
 
-    //for (typename ContainerT::const_iterator it = xs.begin();
-    //     it != xs.end(); ++it)
     p2 = std::min(xs.size(), p2);
-    cout << "size: " << p2 - p1 << " \t";
+    if (printSize) {
+        oss << "[" << p2 - p1 << "] ";
+    }
 
     for (uint p = p1; p < p2; ++p)
     {
         if (p > p1)
         {
-            cout << ",";
+            oss << ",";
         }
-        cout << xs[p];
+        oss << xs[p];
     }
-    cout << endl;
-}
 
-template<typename T>
-std::ostream& operator<< (std::ostream& os, const std::vector<T>& xs) {
-    os << "size: " << xs.size() << " \t";
-    for (typename std::vector<T>::const_iterator it = xs.begin();
-         it != xs.end(); ++it) {
-        if (it != xs.begin())
-        {
-            os << ",";
-        }
-        os << *it;
-    }
-    os << "\n";
-    return os;
+    return oss.str();
 }
-
 
 template<typename ContainerT1, typename ContainerT2>
 void printPermutedArray(const ContainerT1& xs,

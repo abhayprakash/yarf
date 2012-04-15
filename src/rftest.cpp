@@ -231,7 +231,7 @@ bool testForest(const Dataset::Ptr data)
     using std::endl;
 
     RFparameters params;
-    params.numTrees = 50;
+    params.numTrees = 10;
     params.numSplitFeatures = std::ceil(std::sqrt(data->numFeatures()));
     params.minScore = 1e-6;
 
@@ -272,6 +272,7 @@ int main(int argc, char* argv[])
 {
     Utils::srand();
     Log::reportingLevel() = Log::INFO;
+    //Log::reportingLevel() = Log::DEBUG2;
 
     //testRFsplit(createTestDataset(10, 1));
     //testRFnode(createTestDataset(100, 4));

@@ -250,7 +250,7 @@ bool testForest(const Dataset::Ptr data)
     cout << '\n';
     for (uint i = 0; i < treeErrs.size(); ++i)
     {
-        cout << "OOB error " << i << ":\t"
+        cout << "OOB error tree " << i << ":\t"
              << arrayToString(treeErrs[i]) << "\n";
     }
     cout << "\nOOB error: " << arrayToString(oobErr) << endl;
@@ -260,7 +260,7 @@ bool testForest(const Dataset::Ptr data)
     forest.varImp(imp, treeImps);
     for (uint i = 0; i < treeImps.size(); ++i)
     {
-        cout << "Feature importance " << i << ":\t"
+        cout << "Feature importance tree " << i << ":\t"
              << arrayToString(treeImps[i]) << "\n";
     }
     cout << "\nFeature importance: " << arrayToString(imp) << endl;
@@ -277,8 +277,8 @@ int main(int argc, char* argv[])
     //testRFsplit(createTestDataset(10, 1));
     //testRFnode(createTestDataset(100, 4));
     //testForest(createTestDataset(100, 4));
-    //testForest(openTestDataset("ionosphere.csv"));
-    testForest(openTestDataset("iris.csv"));
+    //testForest(openTestDataset("../data/ionosphere.csv"));
+    testForest(openTestDataset("../data/iris.csv"));
     return 0;
 }
 

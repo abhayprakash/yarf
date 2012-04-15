@@ -8,8 +8,8 @@
 #include "RFparameters.hpp"
 #include "RFsplit.hpp"
 #include "RFutils.hpp"
+#include "RFserialise.hpp"
 #include "Logger.hpp"
-#include "output.hpp"
 
 
 
@@ -115,6 +115,26 @@ public:
      */
     RFnode::Ptr right() const {
         return m_right;
+    }
+
+    /**
+     * Save this object
+     */
+    void serialise(std::ostream& os, uint level) const {
+        os << "RFnode {\n"
+           << "counts " << arrayToString(m_counts) << "\n"
+           << "n " << m_n << "\n"
+           << "depth " << m_depth << "\n"
+           << "split ";
+        m_split->serialise(os, level);
+        if (!isleaf()) {
+            os << "Left ";
+            m_left->serialise(os, level);
+            os << "Right ";
+            m_right->serialise(os, level);
+            os << "";
+        }
+        os << "} RFnode\n";
     }
 
 protected:

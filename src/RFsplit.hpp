@@ -11,6 +11,7 @@
 #include "Dataset.hpp"
 #include "RFtypes.hpp"
 #include "RFparameters.hpp"
+#include "RFserialise.hpp"
 #include "Logger.hpp"
 
 
@@ -61,6 +62,11 @@ public:
      * Decide whether a sample should go left or right, false:left true:right
      */
     virtual bool predict(const DataSample& d) const = 0;
+
+    /**
+     * Save this object
+     */
+    virtual void serialise(std::ostream& os, uint level) const = 0;
 
     /**
      * Count the number of each class label
@@ -208,6 +214,24 @@ public:
      */
     UintArray::const_iterator permRight() const {
         return m_perm.end();
+    }
+
+    /**
+     * Save this object
+     */
+    void serialise(std::ostream& os, uint level) const {
+        os << "MaxInfoGainSingleSplit {\n";
+        if (level >= 1) {
+            // These are useful but not necessary
+            os << "ids " << arrayToString(m_ids) << "\n"
+               << "perm " << arrayToString(m_perm) << "\n"
+               << "ig " << arrayToString(m_ig) << "\n"
+               << "splitPos " << m_splitpos << "\n";
+        }
+        os << "ftid " << m_ftid << "\n"
+           << "counts " << arrayToString(m_counts) << "\n"
+           << "splitval " << m_splitval << "\n"
+           << "} MaxInfoGainSingleSplit\n";
     }
 
 protected:
@@ -441,6 +465,33 @@ public:
     MaxInfoGainSingleSplit::Ptr getSplit() const {
         assert(m_bestft >= 0);
         return m_splits[m_bestft];
+    }
+
+    /**
+     * Save this object
+     */
+    virtual void serialise(std::ostream& os, uint level) const {
+        os << "MaxInfoGainSplit {\n"
+           << "counts " << arrayToString(m_counts) << "\n"
+           << "gotSplit " << m_gotSplit << "\n";
+
+        if (level >= 2) {
+            os << "bestft " << m_bestft << "\n"
+               << "split " << "[" << m_splits.size() << "]" << "\n";
+            for (std::vector<MaxInfoGainSingleSplit::Ptr>::const_iterator it =
+                     m_splits.begin(); it != m_splits.end(); ++it) {
+                (*it)->serialise(os, level);
+            }
+        }
+        else {
+            // Only save the best split, if any
+            if (splitRequired()) {
+                os << "bestft " << 0 << "\n"
+                   << "split " << "[1]" << "\n";
+                m_splits[m_bestft]->serialise(os, level);
+            }
+        }
+        os << "} MaxInfoGainSplit\n";
     }
 
 protected:

@@ -17,6 +17,9 @@
 #include "DataIO.hpp"
 #include "output.hpp"
 #include "Logger.hpp"
+#include "RFserialise.hpp"
+
+
 
 void createTestData(FtvalArray& fts, LabelArray& ls, IdArray& ids, uint& ncls)
 {
@@ -93,7 +96,7 @@ Dataset::Ptr createTestDataset(uint n, uint f)
 Dataset::Ptr openTestDataset(const char file[])
 {
     using std::cout;
-    using std::cerr;
+    //using std::cerr;
     using std::endl;
 
     CsvReader csv;
@@ -225,7 +228,7 @@ bool testRFnode(const Dataset::Ptr data)
     return true;
 }
 
-bool testForest(const Dataset::Ptr data)
+RefCountPtr<RFforest> testForest(const Dataset::Ptr data)
 {
     using std::cout;
     using std::endl;
@@ -235,18 +238,18 @@ bool testForest(const Dataset::Ptr data)
     params.numSplitFeatures = std::ceil(std::sqrt(data->numFeatures()));
     params.minScore = 1e-6;
 
-    RFforest forest(*data, params);
+    RefCountPtr<RFforest> forest = new RFforest(*data, params);
 
     cout << indent(80, '*');
-    for (uint i = 0; i < forest.numTrees(); ++i)
+    for (uint i = 0; i < forest->numTrees(); ++i)
     {
         cout << "\nTree " << i << "\n";
-        printTree(*forest.getTree(i)->getRoot());
+        printTree(*forest->getTree(i)->getRoot());
     }
 
     std::vector<DoubleArray> treeErrs;
     DoubleArray oobErr;
-    forest.oobErrors(oobErr, treeErrs);
+    forest->oobErrors(oobErr, treeErrs);
     cout << '\n';
     for (uint i = 0; i < treeErrs.size(); ++i)
     {
@@ -257,7 +260,7 @@ bool testForest(const Dataset::Ptr data)
 
     std::vector<DoubleArray> treeImps;
     DoubleArray imp;
-    forest.varImp(imp, treeImps);
+    forest->varImp(imp, treeImps);
     for (uint i = 0; i < treeImps.size(); ++i)
     {
         cout << "Feature importance tree " << i << ":\t"
@@ -265,8 +268,48 @@ bool testForest(const Dataset::Ptr data)
     }
     cout << "\nFeature importance: " << arrayToString(imp) << endl;
 
-    return true;
+    return forest;
 }
+
+
+void testSerialise(RefCountPtr<RFforest> forest)
+{
+    using std::cout;
+    using std::endl;
+
+    //cout << indent(80, '*') << endl;
+    std::ofstream fout("serialise.out");
+
+    forest->getTree(0)->serialise(fout, 2, 0);
+}
+
+
+void testDeserialise()
+{
+    using std::cout;
+    //using std::cerr;
+    using std::endl;
+
+    //cout << indent(80, '*') << endl;
+    const char f[] = "serialise.out";
+    std::ifstream fin(f);
+
+    Deserialiser d(fin);
+    if (!fin)
+    {
+        LOG(Log::ERROR) << "Failed to open " << f << endl;
+        return;
+    }
+
+    Deserialiser::Token token = d.next();
+
+    while (token.type != Deserialiser::ParseError) {
+        cout << Deserialiser::toString(token) << endl;
+        token = d.next();
+    }
+    LOG(Log::WARNING) << Deserialiser::toString(token) << endl;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -274,11 +317,15 @@ int main(int argc, char* argv[])
     Log::reportingLevel() = Log::INFO;
     //Log::reportingLevel() = Log::DEBUG2;
 
+    RefCountPtr<RFforest> f;
     //testRFsplit(createTestDataset(10, 1));
     //testRFnode(createTestDataset(100, 4));
     //testForest(createTestDataset(100, 4));
     //testForest(openTestDataset("../data/ionosphere.csv"));
-    testForest(openTestDataset("../data/iris.csv"));
+    //f = testForest(openTestDataset("../data/iris.csv"));
+
+    //testSerialise(f);
+    testDeserialise();
     return 0;
 }
 

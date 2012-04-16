@@ -66,7 +66,7 @@ public:
     /**
      * Save this object
      */
-    virtual void serialise(std::ostream& os, uint level) const = 0;
+    virtual void serialise(std::ostream& os, uint level, uint i) const = 0;
 
     /**
      * Count the number of each class label
@@ -219,19 +219,19 @@ public:
     /**
      * Save this object
      */
-    void serialise(std::ostream& os, uint level) const {
-        os << "MaxInfoGainSingleSplit {\n";
+    void serialise(std::ostream& os, uint level, uint i) const {
+        os << in(i) << "MaxInfoGainSingleSplit{\n";
         if (level >= 1) {
             // These are useful but not necessary
-            os << "ids " << arrayToString(m_ids) << "\n"
-               << "perm " << arrayToString(m_perm) << "\n"
-               << "ig " << arrayToString(m_ig) << "\n"
-               << "splitPos " << m_splitpos << "\n";
+            os << in(i) << "ids " << arrayToString(m_ids) << "\n"
+               << in(i) << "perm " << arrayToString(m_perm) << "\n"
+               << in(i) << "ig " << arrayToString(m_ig) << "\n"
+               << in(i) << "splitPos " << m_splitpos << "\n";
         }
-        os << "ftid " << m_ftid << "\n"
-           << "counts " << arrayToString(m_counts) << "\n"
-           << "splitval " << m_splitval << "\n"
-           << "} MaxInfoGainSingleSplit\n";
+        os << in(i) << "ftid " << m_ftid << "\n"
+           << in(i) << "counts " << arrayToString(m_counts) << "\n"
+           << in(i) << "splitval " << m_splitval << "\n"
+           << in(i) << "}MaxInfoGainSingleSplit\n";
     }
 
 protected:
@@ -470,28 +470,28 @@ public:
     /**
      * Save this object
      */
-    virtual void serialise(std::ostream& os, uint level) const {
-        os << "MaxInfoGainSplit {\n"
-           << "counts " << arrayToString(m_counts) << "\n"
-           << "gotSplit " << m_gotSplit << "\n";
+    virtual void serialise(std::ostream& os, uint level, uint i) const {
+        os << in(i) << "MaxInfoGainSplit{\n"
+           << in(i) << "counts " << arrayToString(m_counts) << "\n"
+           << in(i) << "gotSplit " << m_gotSplit << "\n";
 
         if (level >= 2) {
-            os << "bestft " << m_bestft << "\n"
-               << "split " << "[" << m_splits.size() << "]" << "\n";
+            os << in(i) << "bestft " << m_bestft << "\n"
+               << in(i) << "split " << "[" << m_splits.size() << "]\n";
             for (std::vector<MaxInfoGainSingleSplit::Ptr>::const_iterator it =
                      m_splits.begin(); it != m_splits.end(); ++it) {
-                (*it)->serialise(os, level);
+                (*it)->serialise(os, level, i + 1);
             }
         }
         else {
             // Only save the best split, if any
             if (splitRequired()) {
-                os << "bestft " << 0 << "\n"
-                   << "split " << "[1]" << "\n";
-                m_splits[m_bestft]->serialise(os, level);
+                os << in(i) << "bestft " << 0 << "\n"
+                   << in(i) << "split " << "[1]\n";
+                m_splits[m_bestft]->serialise(os, level, i + 1);
             }
         }
-        os << "} MaxInfoGainSplit\n";
+        os << in(i) << "}MaxInfoGainSplit\n";
     }
 
 protected:

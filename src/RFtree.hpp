@@ -7,6 +7,7 @@
 #include "Dataset.hpp"
 #include "RFnode.hpp"
 #include "RFutils.hpp"
+#include "RFserialise.hpp"
 #include <vector>
 #include <algorithm>
 #include <functional>
@@ -83,6 +84,22 @@ public:
      */
     void predict(DoubleArray& dist, const DataSample& d) const {
         m_root->predict(dist, d);
+    }
+
+    /**
+     * Save this object
+     */
+    void serialise(std::ostream& os, uint level, uint i) const {
+        os << in(i) << "RFtree{\n"
+           << in(i) << "data " << "[0]" << "\n"
+           << in(i) << "ids " << arrayToString(m_ids) << "\n"
+           << in(i) << "bag " << arrayToString(m_bag) << "\n"
+           << in(i) << "oob " << arrayToString(m_oob) << "\n"
+           << in(i) << "params\n";
+        m_params.serialise(os, level, i + 1);
+        os << in(i) << "root\n";
+        m_root->serialise(os, level, i + 1);
+        os << in(i) << "}RFtree\n";
     }
 
 protected:

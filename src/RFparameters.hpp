@@ -5,6 +5,7 @@
 #define YARF_RFPARAMETERS_HPP
 
 #include "RFtypes.hpp"
+#include "RFserialise.hpp"
 
 /**
  * Parameters for the random forest
@@ -25,6 +26,14 @@ struct RFparameters
      * Minimum score before splitting
      */
     double minScore;
+
+    void serialise(std::ostream& os, uint level, uint i) const {
+        os << in(i) << "RFparameters{\n"
+           << in(i) << "numTrees " << numTrees << "\n"
+           << in(i) << "numSplitFeatures " << numSplitFeatures << "\n"
+           << in(i) << "minScore " << minScore << "\n"
+           << in(i) << "}RFparameters\n";
+    }
 };
 
 

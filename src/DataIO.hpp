@@ -9,6 +9,7 @@
 #include <sstream>
 #include <vector>
 #include "refcountptr.hpp"
+#include "Logger.hpp"
 
 class Tokeniser
 {
@@ -79,6 +80,17 @@ public:
         iss >> x;
         // TODO: check whether conversion succeeded
         return x;
+    }
+
+    /**
+     * Convert an object into a string using the >> operator
+     */
+    template <typename T>
+    static std::string toString(const T& x) {
+        std::ostringstream oss;
+        oss << x;
+        // TODO: check whether conversion succeeded
+        return oss.str();
     }
 
 private:
@@ -184,15 +196,13 @@ public:
             if (m_xs.empty()) {
                 m_cols = x->size();
                 if (m_cols < 1) {
-                    std::cerr << "Line " << m_xs.size() << " was empty"
-                              << std::endl;
+                    LOG(Log::ERROR) << "Line " << m_xs.size() << " was empty";
                     return false;
                 }
             }
             else if (x->size() != m_cols) {
-                std::cerr << "Line " << m_xs.size() << " expected "
-                          << m_cols << " tokens, found " << x->size()
-                          << std::endl;
+                LOG(Log::ERROR) << "Line " << m_xs.size() << " expected "
+                                << m_cols << " tokens, found " << x->size();
                 return false;
             }
 

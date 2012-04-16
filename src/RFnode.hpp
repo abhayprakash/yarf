@@ -120,21 +120,20 @@ public:
     /**
      * Save this object
      */
-    void serialise(std::ostream& os, uint level) const {
-        os << "RFnode {\n"
-           << "counts " << arrayToString(m_counts) << "\n"
-           << "n " << m_n << "\n"
-           << "depth " << m_depth << "\n"
-           << "split ";
-        m_split->serialise(os, level);
+    void serialise(std::ostream& os, uint level, uint i) const {
+        os << in(i) << "RFnode{\n"
+           << in(i) << "counts " << arrayToString(m_counts) << "\n"
+           << in(i) << "n " << m_n << "\n"
+           << in(i) << "depth " << m_depth << "\n"
+           << in(i) << "split\n";
+        m_split->serialise(os, level, i + 1);
         if (!isleaf()) {
-            os << "Left ";
-            m_left->serialise(os, level);
-            os << "Right ";
-            m_right->serialise(os, level);
-            os << "";
+            os << in(i) << "Left\n";
+            m_left->serialise(os, level, i + 1);
+            os << in(i) << "Right\n";
+            m_right->serialise(os, level, i + 1);
         }
-        os << "} RFnode\n";
+        os << in(i) << "}RFnode\n";
     }
 
 protected:

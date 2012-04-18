@@ -96,6 +96,7 @@ public:
 private:
     /**
      * Find the next token
+     * m_q points to the previous ending delimiter, apart from the first token
      */
     void findNext() {
         m_taken = false;
@@ -104,20 +105,31 @@ private:
             return;
         }
 
-        m_p = m_q;
+        if (m_q == std::string::npos) {
+            m_p = std::string::npos;
+            return;
+        }
+
+        if (m_q == 0) {
+            // First time
+            m_p = 0;
+        }
+        else {
+            m_p = m_q + 1;
+        }
+
         if (m_condense) {
             // Skip all delimiters
-            m_p = m_s.find_first_not_of(m_delims, m_q);
+            m_p = m_s.find_first_not_of(m_delims, m_p);
         }
-        else if (m_p != 0) {
-            // 
-            m_p = m_s.find_first_of(m_delims, m_q);
+        if (m_p == std::string::npos) {
+            return;
         }
-        // else !m_condense and m_p == 0, so return an empty leading token
 
         m_q = m_s.find_first_of(m_delims, m_p);
-
         // s[m_p..m_q-1] is the next token
+        // Note that this intentionally returns an empty first token if
+        // !m_condense and m_p == 0
     }
 
     /**

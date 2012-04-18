@@ -249,7 +249,7 @@ public:
         check(t.type == D::ObjectStart && t.object == "RFparameters");
         RFparameters* obj = new RFparameters();
 
-        while (t.type != D::ObjectEnd) {
+        while (true) {
             t = next();
 
             if (t.tag == "numTrees" && t.type == D::Scalar) {
@@ -261,11 +261,16 @@ public:
             else if (t.tag == "minScore" && t.type == D::Scalar) {
                 set(obj->minScore, t.value);
             }
+            else if (t.type == D::ObjectEnd && t.object == "RFparameters") {
+                break;
+            }
             else {
                 // error
+                LOG(Log::ERROR) << "Unexpected token: "
+                                << Deserialiser::toString(t);
+                assert(false);
             }
         }
-        check(t.object == "RFparameters");
 
         return obj;
     }
@@ -274,7 +279,7 @@ public:
         check(t.type == D::ObjectStart && t.object == "RFforest");
         RFforest* obj = new RFforest();
 
-        while (t.type != D::ObjectEnd) {
+        while (true) {
             t = next();
 
             if (t.tag == "data" && t.type == D::EmptyArray) {
@@ -290,11 +295,16 @@ public:
                     obj->m_trees[n] = dRFtree(next());
                 }
             }
+            else if (t.type == D::ObjectEnd && t.object == "RFforest") {
+                break;
+            }
             else {
                 // error
+                LOG(Log::ERROR) << "Unexpected token: "
+                                << Deserialiser::toString(t);
+                assert(false);
             }
         }
-        check(t.object == "RFforest");
 
         return obj;
     }
@@ -303,7 +313,7 @@ public:
         check(t.type == D::ObjectStart && t.object == "RFtree");
         RFtree* obj = new RFtree();
 
-        while (t.type != D::ObjectEnd) {
+        while (true) {
             t = next();
 
             if (t.tag == "data" && t.type == D::EmptyArray) {
@@ -325,11 +335,16 @@ public:
             else if (t.tag == "root" && t.type == D::ObjectStart) {
                 obj->m_root = dRFnode(t);
             }
+            else if (t.type == D::ObjectEnd && t.object == "RFtree") {
+                break;
+            }
             else {
                 // error
+                LOG(Log::ERROR) << "Unexpected token: "
+                                << Deserialiser::toString(t);
+                assert(false);
             }
         }
-        check(t.object == "RFtree");
 
         return obj;
     }
@@ -338,7 +353,7 @@ public:
         check(t.type == D::ObjectStart && t.object == "RFnode");
         RFnode* obj = new RFnode();
 
-        while (t.type != D::ObjectEnd) {
+        while (true) {
             t = next();
 
             if (t.tag == "Left" && t.type == D::ObjectStart) {
@@ -359,11 +374,16 @@ public:
             else if (t.tag == "depth" && t.type == D::Scalar) {
                 set(obj->m_depth, t.value);
             }
+            else if (t.type == D::ObjectEnd && t.object == "RFnode") {
+                break;
+            }
             else {
                 // error
+                LOG(Log::ERROR) << "Unexpected token: "
+                                << Deserialiser::toString(t);
+                assert(false);
             }
         }
-        check(t.object == "RFnode");
 
         return obj;
     }
@@ -384,7 +404,7 @@ public:
         check(t.type == D::ObjectStart && t.object == "MaxInfoGainSplit");
         MaxInfoGainSplit* obj = new MaxInfoGainSplit();
 
-        while (t.type != D::ObjectEnd) {
+        while (true) {
             t = next();
 
             if (t.tag == "counts" && t.type == D::NumericArray) {
@@ -405,11 +425,16 @@ public:
                     obj->m_splits[n] = dMaxInfoGainSingleSplit(next());
                 }
             }
+            else if (t.type == D::ObjectEnd && t.object == "MaxInfoGainSplit") {
+                break;
+            }
             else {
                 // error
+                LOG(Log::ERROR) << "Unexpected token: "
+                                << Deserialiser::toString(t);
+                assert(false);
             }
         }
-        check(t.object == "MaxInfoGainSplit");
 
         return obj;
     }
@@ -418,7 +443,7 @@ public:
         check(t.type == D::ObjectStart && t.object == "MaxInfoGainSingleSplit");
         MaxInfoGainSingleSplit* obj = new MaxInfoGainSingleSplit();
 
-        while (t.type != D::ObjectEnd) {
+        while (true) {
             t = next();
 
             if (t.tag == "ids" && t.type == D::NumericArray) {
@@ -442,11 +467,17 @@ public:
             else if (t.tag == "splitval" && t.type == D::Scalar) {
                 set(obj->m_splitval, t.value);
             }
+            else if (t.type == D::ObjectEnd &&
+                     t.object == "MaxInfoGainSingleSplit") {
+                break;
+            }
             else {
                 // error
+                LOG(Log::ERROR) << "Unexpected token: "
+                                << Deserialiser::toString(t);
+                assert(false);
             }
         }
-        check(t.object == "MaxInfoGainSingleSplit");
 
         return obj;
     }

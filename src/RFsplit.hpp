@@ -130,7 +130,7 @@ public:
                            const LabelArray& ls, const IdArray& ids,
                            const DoubleArray& counts):
         m_ids(ids), m_ftid(ftid), m_perm(ids.size()), m_counts(counts),
-        m_ig(ids.size()), m_splitpos(0), m_splitval(NAN) {
+        m_ig(ids.size()), m_splitpos(0), m_splitval(0) {
         assert(ids.size() > 0);
         assert(fts.size() == ls.size() && fts.size() == ids.size());
 
@@ -226,7 +226,7 @@ public:
             os << in(i) << "ids " << arrayToString(m_ids) << "\n"
                << in(i) << "perm " << arrayToString(m_perm) << "\n"
                << in(i) << "ig " << arrayToString(m_ig) << "\n"
-               << in(i) << "splitPos " << m_splitpos << "\n";
+               << in(i) << "splitpos " << m_splitpos << "\n";
         }
         os << in(i) << "ftid " << m_ftid << "\n"
            << in(i) << "counts " << arrayToString(m_counts) << "\n"

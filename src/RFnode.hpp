@@ -185,6 +185,14 @@ protected:
      * Tree depth of this node
      */
     uint m_depth;
+
+private:
+    /**
+     * Default constructor for deserialisation only
+     */
+    RFnode() {
+    }
+    friend class RFbuilder;
 };
 
 

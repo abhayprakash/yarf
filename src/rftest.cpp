@@ -24,9 +24,6 @@
 
 void createTestData(FtvalArray& fts, LabelArray& ls, IdArray& ids, uint& ncls)
 {
-    using std::cout;
-    using std::endl;
-
     static const Ftval ftsa[] = {10, 2, 65, 176, 121, 65, 36, 65, 10};
     static const Label lsa[] = {0, 0, 1, 1, 1, 1, 0, 0, 0};
     //static const Ftval ftsa[] = {10, 2, 65, 17};
@@ -94,17 +91,12 @@ Dataset::Ptr createTestDataset(uint n, uint f)
 }
 
 
-Dataset::Ptr openTestDataset(const char file[])
+Dataset::Ptr openTestDataset(const char fname[])
 {
-    using std::cout;
-    //using std::cerr;
-    using std::endl;
-
     CsvReader csv;
-    bool status = csv.parse(file);
+    bool status = csv.parse(fname);
     if (!status) {
-        LOG(Log::ERROR) << "Error parsing " << file << endl;
-        //cerr << "Error parsing " << file << endl;
+        LOG(Log::ERROR) << "Error parsing " << fname;
         exit(1);
     }
 
@@ -136,9 +128,6 @@ Dataset::Ptr openTestDataset(const char file[])
 
 bool testRFsplit(const Dataset::Ptr data)
 {
-    using std::cout;
-    using std::endl;
-
     FtvalArray fts;
     LabelArray ls;
     IdArray ids;
@@ -162,8 +151,8 @@ bool testRFsplit(const Dataset::Ptr data)
     printPermutedArray<LabelArray, UintArray>(ls, s->permLeft(), s->permRight());
     printPermutedArray<IdArray, UintArray>(ids, s->permLeft(), s->permRight());
 
-    cout << arrayToString(s->getInfoGainArray())
-         << "IG: " << ig << " split-val: " << sv << endl;
+    std::cout << arrayToString(s->getInfoGainArray())
+              << "IG: " << ig << " split-val: " << sv << std::endl;
 
     printPermutedArray<FtvalArray, UintArray>(fts, s->permLeft(), s->permMiddle());
     printPermutedArray<FtvalArray, UintArray>(fts, s->permMiddle(), s->permRight());
@@ -212,12 +201,12 @@ bool testRFnode(const Dataset::Ptr data)
 {
     using std::cout;
 
-    RFparameters params;
-    params.numTrees = 1;
-    params.numSplitFeatures = std::ceil(std::sqrt(data->numFeatures()));
-    params.minScore = 1e-6;
+    RFparameters::Ptr params = new RFparameters;
+    params->numTrees = 1;
+    params->numSplitFeatures = std::ceil(std::sqrt(data->numFeatures()));
+    params->minScore = 1e-6;
 
-    RFtree::Ptr tree = new RFtree(*data, params);
+    RFtree::Ptr tree = new RFtree(data.get(), params);
 
     cout << indent(80, '*') << "\n";
     printTree(*tree->getRoot());
@@ -234,12 +223,12 @@ RefCountPtr<RFforest> testForest(const Dataset::Ptr data)
     using std::cout;
     using std::endl;
 
-    RFparameters params;
-    params.numTrees = 10;
-    params.numSplitFeatures = std::ceil(std::sqrt(data->numFeatures()));
-    params.minScore = 1e-6;
+    RFparameters::Ptr params = new RFparameters;
+    params->numTrees = 10;
+    params->numSplitFeatures = std::ceil(std::sqrt(data->numFeatures()));
+    params->minScore = 1e-6;
 
-    RefCountPtr<RFforest> forest = new RFforest(*data, params);
+    RefCountPtr<RFforest> forest = new RFforest(data.get(), params);
 
     cout << indent(80, '*');
     for (uint i = 0; i < forest->numTrees(); ++i)
@@ -273,60 +262,65 @@ RefCountPtr<RFforest> testForest(const Dataset::Ptr data)
 }
 
 
-void testSerialise(RefCountPtr<RFforest> forest)
+void testSerialise(RefCountPtr<RFforest> forest, const char fname[])
 {
-    using std::cout;
-    using std::endl;
+    //std::cout << indent(80, '*') << std::endl;
+    std::ofstream fout(fname);
 
-    //cout << indent(80, '*') << endl;
-    std::ofstream fout("serialise.out");
-
-    forest->getTree(0)->serialise(fout, 2, 0);
+    //forest->getTree(0)->serialise(fout, 2, 0);
+    forest->serialise(fout, 2, 0);
 }
 
 
-void testDeserialise()
+RefCountPtr<RFforest> testDeserialise(const char fname[])
 {
     using std::cout;
     //using std::cerr;
     using std::endl;
 
     //cout << indent(80, '*') << endl;
-    const char f[] = "serialise.out";
-    std::ifstream fin(f);
+    std::ifstream fin(fname);
 
-    Deserialiser d(fin);
+    Deserialiser deserial(fin);
     if (!fin)
     {
-        LOG(Log::ERROR) << "Failed to open " << f << endl;
-        return;
+        LOG(Log::ERROR) << "Failed to open " << fname << endl;
+        return NULL;
     }
 
-    Deserialiser::Token token = d.next();
+    RFbuilder builder(deserial);
+    RFforest::Ptr forest = builder.dRFforest(builder.nextToken());
+    //RFtree::Ptr tree = builder.dRFtree(builder.nextToken());
 
+    Deserialiser::Token token = deserial.next();
     while (token.type != Deserialiser::ParseError) {
         cout << Deserialiser::toString(token) << endl;
-        token = d.next();
+        token = deserial.next();
     }
     LOG(Log::WARNING) << Deserialiser::toString(token) << endl;
+
+    return forest;
 }
 
 
 int main(int argc, char* argv[])
 {
-    Utils::srand();
-    Log::reportingLevel() = Log::INFO;
-    //Log::reportingLevel() = Log::DEBUG2;
+    uint seed = 123;
+    Utils::srand(seed);
+    //Log::reportingLevel() = Log::INFO;
+    Log::reportingLevel() = Log::DEBUG2;
 
     RefCountPtr<RFforest> f;
     //testRFsplit(createTestDataset(10, 1));
     //testRFnode(createTestDataset(100, 4));
     //testForest(createTestDataset(100, 4));
     //testForest(openTestDataset("../data/ionosphere.csv"));
-    //f = testForest(openTestDataset("../data/iris.csv"));
+    f = testForest(openTestDataset("../data/iris.csv"));
 
-    //testSerialise(f);
-    testDeserialise();
+    const char fname[] = "serialise2.out";
+    testSerialise(f, fname);
+    testDeserialise(fname);
+
     return 0;
 }
 

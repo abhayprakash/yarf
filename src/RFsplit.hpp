@@ -365,10 +365,18 @@ protected:
         return std::fabs(x - y) < EPSILON;
     }
 
+private:
+    /**
+     * Default constructor for deserialisation only
+     */
+    MaxInfoGainSingleSplit() {
+    }
+    friend class RFbuilder;
+
     /**
      * Input sample ids
      */
-    UintArray m_ids;
+    IdArray m_ids;
 
     /**
      * Feature identifier
@@ -537,6 +545,13 @@ protected:
     }
 
 private:
+    /**
+     * Default constructor for deserialisation only
+     */
+    MaxInfoGainSplit() {
+    }
+    friend class RFbuilder;
+
     /**
      * Total numbers of each class label
      */

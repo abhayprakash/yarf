@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <algorithm>
 #include <functional>
+#include <string>
+#include <sstream>
 
 class Utils
 {
@@ -93,6 +95,31 @@ public:
         }
         std::transform(from, to, from, std::bind2nd(std::divides<V>(), div));
     }
+
+    /**
+     * Convert a string into type T using the << operator
+     */
+    template <typename T>
+    static T convert(const std::string s) {
+        std::istringstream iss(s);
+        T x;
+        iss >> x;
+        // TODO: check whether conversion succeeded
+        //if (iss.fail())
+        return x;
+    }
+
+    /**
+     * Convert an object into a string using the >> operator
+     */
+    template <typename T>
+    static std::string toString(const T& x) {
+        std::ostringstream oss;
+        oss << x;
+        // TODO: check whether conversion succeeded
+        return oss.str();
+    }
+
 };
 
 

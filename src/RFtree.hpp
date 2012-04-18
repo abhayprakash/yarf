@@ -23,13 +23,13 @@ public:
 
     /**
      * A random forest tree
-     * data: The underlying dataset, stored as a reference so must remain in
-     *       scope
+     * data: The underlying dataset, must remain in scope for the life of the
+     *       tree
      * params: Random forest parameters
      */
-    RFtree(const Dataset& data, const RFparameters& params):
+    RFtree(const Dataset* data, RFparameters::Ptr params):
         m_data(data), m_params(params) {
-        data.getIds(m_ids);
+        data->getIds(m_ids);
         buildTree();
     }
 
@@ -48,8 +48,8 @@ public:
      * Returns the overall class weighted error rate
      */
     double oobErrors(DoubleArray& err) const {
-        ConfusionMatrix cm(m_data.numClasses());
-        oobPredict(cm, m_data);
+        ConfusionMatrix cm(m_data->numClasses());
+        oobPredict(cm, *m_data);
         return cm.classErrorRates(err);
     }
 
@@ -67,11 +67,11 @@ public:
         ConfusionMatrix pcm(permuted.numClasses());
         oobPredict(pcm, permuted);
 
-        ConfusionMatrix cm(m_data.numClasses());
-        oobPredict(cm, m_data);
+        ConfusionMatrix cm(m_data->numClasses());
+        oobPredict(cm, *m_data);
 
         double imp = 0.0;
-        for (Label i = 0; i < m_data.numClasses(); ++i) {
+        for (Label i = 0; i < m_data->numClasses(); ++i) {
             imp += cm.score(i, i) - pcm.score(i, i);
         }
         assert(cm.total() == pcm.total());
@@ -96,7 +96,7 @@ public:
            << in(i) << "bag " << arrayToString(m_bag) << "\n"
            << in(i) << "oob " << arrayToString(m_oob) << "\n"
            << in(i) << "params\n";
-        m_params.serialise(os, level, i + 1);
+        m_params->serialise(os, level, i + 1);
         os << in(i) << "root\n";
         m_root->serialise(os, level, i + 1);
         os << in(i) << "}RFtree\n";
@@ -129,7 +129,7 @@ protected:
      */
     void buildTree() {
         randomBagOob(m_bag, m_oob);
-        m_root = new RFnode(m_params, m_data, m_bag);
+        m_root = new RFnode(*m_params, *m_data, m_bag);
     }
 
     /**
@@ -138,7 +138,7 @@ protected:
      * data: The dataset to use for predictions
      */
     void oobPredict(ConfusionMatrix& cm, const Dataset& data) const {
-        assert(m_data.numClasses() == data.numClasses());
+        assert(m_data->numClasses() == data.numClasses());
         DoubleArray dist;
 
         for (IdArray::const_iterator it = m_oob.begin();
@@ -153,14 +153,21 @@ protected:
 
 private:
     /**
-     * Reference to the underlying dataset
+     * Default constructor for deserialisation only
      */
-    const Dataset& m_data;
+    RFtree() {
+    }
+    friend class RFbuilder;
+
+    /**
+     * The underlying dataset
+     */
+    const Dataset* m_data;
 
     /**
      * Parameters
      */
-    const RFparameters m_params;
+    RFparameters::Ptr m_params;
 
     /**
      * Dataset sample ids
@@ -190,17 +197,19 @@ private:
 class RFforest
 {
 public:
+    typedef RefCountPtr<RFforest> Ptr;
+
     /**
      * A random forest
-     * data: The underlying dataset, stored as a reference so must remain in
-     *       scope
+     * data: The underlying dataset, must remain in scope for the life of the
+     *       forest
      * params: Random forest parameters
      */
-    RFforest(const Dataset& data, const RFparameters& params):
+    RFforest(const Dataset* data, const RFparameters::Ptr params):
         m_data(data), m_params(params) {
-        m_trees.reserve(m_params.numTrees);
-        for (uint i = 0; i < m_params.numTrees; ++i) {
-            m_trees.push_back(new RFtree(data, params));
+        m_trees.reserve(m_params->numTrees);
+        for (uint i = 0; i < m_params->numTrees; ++i) {
+            m_trees.push_back(new RFtree(data, m_params));
         }
     }
 
@@ -215,7 +224,7 @@ public:
         treeDists.resize(m_trees.size());
         // Fill with 0
         dist.clear();
-        dist.resize(m_data.numClasses());
+        dist.resize(m_data->numClasses());
 
         for (uint i = 0; i < m_trees.size(); ++i) {
             m_trees[i]->predict(treeDists[i], d);
@@ -246,7 +255,7 @@ public:
         treeErrs.resize(numTrees());
         // Fill with 0
         err.clear();
-        err.resize(m_data.numClasses());
+        err.resize(m_data->numClasses());
 
         for (uint i = 0; i < numTrees(); ++i) {
             m_trees[i]->oobErrors(treeErrs[i]);
@@ -276,14 +285,14 @@ public:
     void varImp(DoubleArray& imp, std::vector<DoubleArray>& treeImps) const {
         treeImps.resize(numTrees());
         std::fill(treeImps.begin(), treeImps.end(),
-                  DoubleArray(m_data.numFeatures()));
+                  DoubleArray(m_data->numFeatures()));
 
         // Fill with 0
-        imp.resize(m_data.numFeatures());
+        imp.resize(m_data->numFeatures());
         std::fill(imp.begin(), imp.end(), 0);
 
-        for (uint ftid = 0; ftid < m_data.numFeatures(); ++ftid) {
-            Dataset::Ptr permuted = new PermutedFeatureDataset(m_data, ftid);
+        for (uint ftid = 0; ftid < m_data->numFeatures(); ++ftid) {
+            Dataset::Ptr permuted = new PermutedFeatureDataset(*m_data, ftid);
 
             for (uint i = 0; i < numTrees(); ++i) {
                 treeImps[i][ftid] = m_trees[i]->varImp(*permuted, ftid);
@@ -320,16 +329,39 @@ public:
         return m_trees[n];
     }
 
+    /**
+     * Save this object
+     */
+    void serialise(std::ostream& os, uint level, uint i) const {
+        os << in(i) << "RFforest{\n"
+           << in(i) << "data " << "[0]" << "\n"
+           << in(i) << "params\n";
+        m_params->serialise(os, level, i + 1);
+        os << in(i) << "trees " << "[" << m_trees.size() << "]\n";
+        for (std::vector<RFtree::Ptr>::const_iterator it =
+                 m_trees.begin(); it != m_trees.end(); ++it) {
+            (*it)->serialise(os, level, i + 1);
+        }
+        os << in(i) << "}RFforest\n";
+    }
+
 private:
     /**
-     * Reference to the underlying dataset
+     * Default constructor for deserialisation only
      */
-    const Dataset& m_data;
+    RFforest() {
+    }
+    friend class RFbuilder;
+
+    /**
+     * The underlying dataset
+     */
+    const Dataset* m_data;
 
     /**
      * Parameters
      */
-    const RFparameters m_params;
+    RFparameters::Ptr m_params;
 
     /**
      * The array of trees

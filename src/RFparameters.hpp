@@ -12,6 +12,8 @@
  */
 struct RFparameters
 {
+    typedef RefCountPtr<RFparameters> Ptr;
+
     /**
      * Number of trees in the forest
      */

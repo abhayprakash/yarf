@@ -237,161 +237,249 @@ class RFbuilder
 public:
     typedef Deserialiser D;
 
-    RFtree* dRFtree(D::Token t) {
-        check(t.type == D::ObjectStart && t.value == "RFtree");
+    RFbuilder(D& deserialiser):
+        m_deserialiser(deserialiser) {
+    }
+
+    D::Token nextToken() {
+        return next();
+    }
+
+    RFparameters* dRFparameters(D::Token t) {
+        check(t.type == D::ObjectStart && t.object == "RFparameters");
+        RFparameters* obj = new RFparameters();
+
+        while (t.type != D::ObjectEnd) {
+            t = next();
+
+            if (t.tag == "numTrees" && t.type == D::Scalar) {
+                set(obj->numTrees, t.value);
+            }
+            else if (t.tag == "numSplitFeatures" && t.type == D::Scalar) {
+                set(obj->numSplitFeatures, t.value);
+            }
+            else if (t.tag == "minScore" && t.type == D::Scalar) {
+                set(obj->minScore, t.value);
+            }
+            else {
+                // error
+            }
+        }
+        check(t.object == "RFparameters");
+
+        return obj;
+    }
+
+    RFforest* dRFforest(D::Token t) {
+        check(t.type == D::ObjectStart && t.object == "RFforest");
+        RFforest* obj = new RFforest();
+
         while (t.type != D::ObjectEnd) {
             t = next();
 
             if (t.tag == "data" && t.type == D::EmptyArray) {
-                //m_data = dummy
-            }
-            else if(t.tag == "ids" && t.type == D::NumericArray) {
-                //m_ids = parseArray<Id>(t.value);
-            }
-            else if(t.tag == "bag" && t.type == D::NumericArray) {
-                //m_bag = parseArray<Id>(t.value);
-            }
-            else if(t.tag == "oob" && t.type == D::NumericArray) {
-                //m_oob = parseArray<Id>(t.value);
+                // TODO
+                obj->m_data = NULL;
             }
             else if (t.tag == "params" && t.type == D::ObjectStart) {
-                //m_params = ;
+                obj->m_params = dRFparameters(t);
             }
-            else if (t.tag == "root" && t.type == D::ObjectStart) {
-                //m_root = dRFnode(t);
+            else if(t.tag == "trees" && t.type == D::ObjectArray) {
+                obj->m_trees.resize(t.n);
+                for (uint n = 0; n < t.n; ++n) {
+                    obj->m_trees[n] = dRFtree(next());
+                }
             }
             else {
                 // error
             }
         }
-        check(t.value == "RFtree");
+        check(t.object == "RFforest");
+
+        return obj;
     }
 
-    RFnode* dRFnode(D::Token t) {
-        check(t.type == D::ObjectStart && t.value == "RFnode");
+    RFtree* dRFtree(D::Token t) {
+        check(t.type == D::ObjectStart && t.object == "RFtree");
+        RFtree* obj = new RFtree();
+
         while (t.type != D::ObjectEnd) {
             t = next();
 
-            if (t.tag == "counts" && t.type == D::NumericArray) {
-                //m_counts = parseArray<double>(t.value);
+            if (t.tag == "data" && t.type == D::EmptyArray) {
+                // TODO
+                obj->m_data = NULL;
             }
-            else if (t.tag == "n" && t.type == D::Scalar) {
-                //m_n = parseScalar<uint>(t.value);
+            else if (t.tag == "params" && t.type == D::ObjectStart) {
+                obj->m_params = dRFparameters(t);
             }
-            else if (t.tag == "depth" && t.type == D::Scalar) {
-                //m_depth = parseScalar<uint>(t.value);
+            else if(t.tag == "ids" && t.type == D::NumericArray) {
+                set(obj->m_ids, t.value);
             }
-            else if (t.tag == "split" && t.type == D::EmptyArray) {
-                // m_split == []
+            else if(t.tag == "bag" && t.type == D::NumericArray) {
+                set(obj->m_bag, t.value);
             }
-            else if (t.tag == "split" && t.type == D::ObjectArray) {
-                for (uint n = 0; n < t.n; ++n) {
-                    t = next();
-                    //m_split[n] = dSplitSelector(t);
-                    //dMaxInfoGainSplit(t);
-                }
+            else if(t.tag == "oob" && t.type == D::NumericArray) {
+                set(obj->m_oob, t.value);
             }
-            else if (t.tag == "Left" && t.type == D::ObjectStart &&
-                     t.value == "RFnode") {
-                //m_left = dRFnode(t);
-            }
-            else if (t.tag == "Right" && t.type == D::ObjectStart &&
-                     t.value == "RFnode") {
-                //m_right = dRFnode(t);
+            else if (t.tag == "root" && t.type == D::ObjectStart) {
+                obj->m_root = dRFnode(t);
             }
             else {
                 // error
             }
         }
-        check(t.value == "RFnode");
+        check(t.object == "RFtree");
+
+        return obj;
+    }
+
+    RFnode* dRFnode(D::Token t) {
+        check(t.type == D::ObjectStart && t.object == "RFnode");
+        RFnode* obj = new RFnode();
+
+        while (t.type != D::ObjectEnd) {
+            t = next();
+
+            if (t.tag == "Left" && t.type == D::ObjectStart) {
+                obj->m_left = dRFnode(t);
+            }
+            else if (t.tag == "Right" && t.type == D::ObjectStart) {
+                obj->m_right = dRFnode(t);
+            }
+            else if (t.tag == "counts" && t.type == D::NumericArray) {
+                set(obj->m_counts, t.value);
+            }
+            else if (t.tag == "n" && t.type == D::Scalar) {
+                set(obj->m_n, t.value);
+            }
+            else if (t.tag == "split" && t.type == D::ObjectStart) {
+                obj->m_split = dSplitSelector(t);
+            }
+            else if (t.tag == "depth" && t.type == D::Scalar) {
+                set(obj->m_depth, t.value);
+            }
+            else {
+                // error
+            }
+        }
+        check(t.object == "RFnode");
+
+        return obj;
     }
 
     SplitSelector* dSplitSelector(D::Token t) {
         check(t.type == D::ObjectStart);
 
-        if (t.value == "MaxInfoGainSplit") {
+        if (t.object == "MaxInfoGainSplit") {
             return dMaxInfoGainSplit(t);
         }
         else {
             //error
+            assert(false);
         }
     }
 
     MaxInfoGainSplit* dMaxInfoGainSplit(D::Token t) {
-        check(t.type == D::ObjectStart && t.value == "MaxInfoGainSplit");
+        check(t.type == D::ObjectStart && t.object == "MaxInfoGainSplit");
+        MaxInfoGainSplit* obj = new MaxInfoGainSplit();
 
         while (t.type != D::ObjectEnd) {
             t = next();
 
             if (t.tag == "counts" && t.type == D::NumericArray) {
-                //m_counts = parseArray<double>(t.value);
+                set(obj->m_counts, t.value);
             }
             else if (t.tag == "gotSplit" && t.type == D::Scalar) {
-                //m_gotSplit = parseScalar<bool>(t.value);
+                set(obj->m_gotSplit, t.value);
             }
-            else if (t.tag == "bestFit" && t.type == D::Scalar) {
-                //m_bestFit = parseScalar<int>(t.value);
+            else if (t.tag == "bestft" && t.type == D::Scalar) {
+                set(obj->m_bestft, t.value);
             }
             else if (t.tag == "split" && t.type == D::EmptyArray) {
-                // m_split == []
-                // or error?
+                // m_split should default to empty
             }
             else if (t.tag == "split" && t.type == D::ObjectArray) {
+                obj->m_splits.resize(t.n);
                 for (uint n = 0; n < t.n; ++n) {
-                    t = next();
-                    //m_splits[n] = dMaxInfoGainSingleSplitSplit(t);
+                    obj->m_splits[n] = dMaxInfoGainSingleSplit(next());
                 }
             }
             else {
                 // error
             }
         }
-        check(t.value == "MaxInfoGainSplit");
+        check(t.object == "MaxInfoGainSplit");
+
+        return obj;
     }
 
     MaxInfoGainSingleSplit* dMaxInfoGainSingleSplit(D::Token t) {
-        check(t.type == D::ObjectStart && t.value == "MaxInfoGainSingleSplit");
+        check(t.type == D::ObjectStart && t.object == "MaxInfoGainSingleSplit");
+        MaxInfoGainSingleSplit* obj = new MaxInfoGainSingleSplit();
 
         while (t.type != D::ObjectEnd) {
             t = next();
 
             if (t.tag == "ids" && t.type == D::NumericArray) {
-                //m_ids = parseArray<Id>(t.value);
+                set(obj->m_ids, t.value);
             }
             else if (t.tag == "ftid" && t.type == D::Scalar) {
-                //m_ftid = parseScalar<uint>(t.value);
+                set(obj->m_ftid, t.value);
             }
             else if (t.tag == "perm" && t.type == D::NumericArray) {
-                //m_perm = parseArray<uint>(t.value);
+                set(obj->m_perm, t.value);
             }
             else if (t.tag == "counts" && t.type == D::NumericArray) {
-                //m_counts = parseArray<double>(t.value);
+                set(obj->m_counts, t.value);
             }
             else if (t.tag == "ig" && t.type == D::NumericArray) {
-                //m_ig = parseArray<double>(t.value);
+                set(obj->m_ig, t.value);
             }
             else if (t.tag == "splitpos" && t.type == D::Scalar) {
-                //m_splitpos = parseScalar<uint>(t.value);
+                set(obj->m_splitpos, t.value);
             }
             else if (t.tag == "splitval" && t.type == D::Scalar) {
-                //m_splitval = parseScalar<Ftval>(t.value);
+                set(obj->m_splitval, t.value);
             }
             else {
                 // error
             }
         }
-        check(t.value == "MaxInfoGainSingleSplit");
+        check(t.object == "MaxInfoGainSingleSplit");
+
+        return obj;
     }
 
-
 protected:
+    template <typename T>
+    static void set(T& x, const std::string s) {
+        x = Utils::convert<T>(s);
+    }
+
+    template <typename T>
+    static void set(std::vector<T>& xs, std::string s) {
+        xs.clear();
+        Tokeniser tok(",", false);
+        tok.set(s);
+
+        while (tok.hasNext()) {
+            xs.push_back(Utils::convert<T>(tok.next()));
+        }
+    }
+
     // TODO
     static void check(bool b) {
+        if (!b) {
+            LOG(Log::ERROR) << "RFbuilder.check() failed";
+        }
         assert(b);
     }
 
     D::Token next() {
         D::Token t = m_deserialiser.next();
+        LOG(Log::DEBUG2) << Deserialiser::toString(t);
+
         check(t.type != D::ParseError);
         return t;
     }

@@ -55,6 +55,63 @@ public:
     }
 
     /**
+     * Check for equality of arrays
+     */
+/*    template <typename T1, typename T2, typename BinPred>
+    static bool equals(typename T1::const_iterator first1,
+                       typename T1::const_iterator last1,
+                       typename T2::const_iterator first2,
+                       typename T2::const_iterator last2, 
+                       BinPred comp = std::equal_to<
+                       typename T1::value_type>()) {*/
+    template <typename T1>
+    static bool equals(typename T1::const_iterator first1,
+                       typename T1::const_iterator last1,
+                       typename T1::const_iterator first2,
+                       typename T1::const_iterator last2) {
+        while (first1 != last1 && first2 != last2)
+        {
+            //if (!pred(*first1, *first2)) {
+            if (*first1 != *first2) {
+                return false;
+            }
+            ++first1; ++first2;
+        }
+
+        // Handles different lengths
+        return (first1 == last1 && first2 == last2);
+    }
+
+    /**
+     * Check for equality of arrays of arrays
+     */
+//    template <typename T1, typename T2/*, typename BinPred*/>
+//    static bool array2equals(typename T1::iterator first1,
+//                             typename T1::iterator last1,
+//                             typename T2::iterator first2,
+//                             typename T2::iterator last2/*,
+//                             BinPred comp = std::equal_to<
+//                               typename T1::value_type::value_type>()*/) {
+    template <typename T1>
+    static bool array2equals(typename T1::const_iterator first1,
+                             typename T1::const_iterator last1,
+                             typename T1::const_iterator first2,
+                             typename T1::const_iterator last2) {
+        while (first1 != last1 && first2 != last2)
+        {
+            if (!equals<typename T1::value_type>(
+                    first1->begin(), first1->end(),
+                    first2->begin(), first2->end()/*, comp*/)) {
+                return false;
+            }
+            ++first1; ++first2;
+        }
+
+        // Handles different lengths
+        return (first1 == last1 && first2 == last2);
+    }
+
+    /**
      * A functional object which accumulates (sums) each value
      */
     template <typename T>

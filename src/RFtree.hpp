@@ -36,6 +36,13 @@ public:
     ~RFtree() { }
 
     /**
+     * Set the data source, needed if this is a deserialised tree
+     */
+    void setDataset(const Dataset* data) {
+        m_data = data;
+    }
+
+    /**
      * Get the root node of the tree
      */
     RFnode::Ptr getRoot() const {
@@ -210,6 +217,17 @@ public:
         m_trees.reserve(m_params->numTrees);
         for (uint i = 0; i < m_params->numTrees; ++i) {
             m_trees.push_back(new RFtree(data, m_params));
+        }
+    }
+
+    /**
+     * Set the data source, needed if this is a deserialised forest
+     */
+    void setDataset(const Dataset* data) {
+        m_data = data;
+        for (std::vector<RFtree::Ptr>::const_iterator it = m_trees.begin();
+             it != m_trees.end(); ++it) {
+            (*it)->setDataset(data);
         }
     }
 

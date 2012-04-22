@@ -1,12 +1,18 @@
 /**
  * Test program for the random forest
  */
+#include "DataIO.hpp"
 #include "Dataset.hpp"
+
 #include "RFparameters.hpp"
-#include "RFsplit.hpp"
 #include "RFnode.hpp"
 #include "RFtree.hpp"
 
+#include "RFserialise.hpp"
+#include "RFdeserialise.hpp"
+
+#include "output.hpp"
+#include "Logger.hpp"
 #include "ClockTimer.hpp"
 
 
@@ -16,12 +22,6 @@
 
 #include <algorithm>
 #include <functional>
-
-#include "DataIO.hpp"
-#include "output.hpp"
-#include "Logger.hpp"
-#include "RFserialise.hpp"
-#include "RFdeserialise.hpp"
 
 
 

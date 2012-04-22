@@ -8,8 +8,10 @@
 #include <cstdlib>
 #include <algorithm>
 #include <functional>
+#include <numeric>
 #include <string>
 #include <sstream>
+
 
 class Utils
 {
@@ -112,32 +114,6 @@ public:
     }
 
     /**
-     * A functional object which accumulates (sums) each value
-     */
-    template <typename T>
-    class Accumulator
-    {
-    public:
-        /**
-         * Adds x to the total
-         */
-        T operator()(const T& x) {
-            m_x += x;
-            return m_x;
-        }
-
-        /**
-         * Returns the total
-         */
-        T operator()() const {
-            return m_x;
-        }
-
-    protected:
-        T m_x;
-    };
-
-    /**
      * Normalise an array to sum to 1
      * xs: The array of value
      * div: Normalise by dividing each element of xs by this value, if 0 then
@@ -148,7 +124,7 @@ public:
                           typename T::value_type div = 0) {
         typedef typename T::value_type V;
         if (div == 0) {
-            div = for_each(from, to, Utils::Accumulator<V>())();
+            div = std::accumulate(from, to, V());
         }
         std::transform(from, to, from, std::bind2nd(std::divides<V>(), div));
     }

@@ -409,8 +409,16 @@ int main(int argc, char* argv[])
     //ds = createTestDataset(100, 4);
     //testRFnode(ds);
     //testForest(ds);
-    //ds = openTestDataset("../data/ionosphere.csv");
-    ds = openTestDataset("../data/iris.csv");
+
+    if (argc > 1)
+    {
+        ds = openTestDataset(argv[1]);
+    }
+    else
+    {
+        //ds = openTestDataset("../data/ionosphere.csv");
+        ds = openTestDataset("../data/iris.csv");
+    }
 
     timer.time("Creating forest");
     f = testForest(ds);

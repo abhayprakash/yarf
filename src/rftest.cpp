@@ -7,6 +7,9 @@
 #include "RFnode.hpp"
 #include "RFtree.hpp"
 
+#include "ClockTimer.hpp"
+
+
 #include <iostream>
 #include <ctime>
 #include <cmath>
@@ -360,8 +363,38 @@ RFforest::Ptr testDeserialise(const char fname[])
 }
 
 
+void printTimes(const ClockTimer& timer)
+{
+    using std::cout;
+    using std::endl;
+
+    cout << "\nTimings:" << endl;
+    ClockTimer::ClockTimes::const_iterator it = timer.getTimes().begin();
+
+    while (true)
+    {
+        cout << it->first << ":\t" << it->second;
+        ClockTimer::ClockTimes::const_iterator prev = it++;
+
+        if (it == timer.getTimes().end())
+        {
+            break;
+        }
+        else
+        {
+            cout << "\t+" << it->second - prev->second;
+        }
+        cout << endl;
+    }
+
+    cout << endl;
+}
+
+
 int main(int argc, char* argv[])
 {
+    ClockTimer timer;
+
     uint seed = 123;
     Utils::srand(seed);
     //Log::reportingLevel() = Log::INFO;
@@ -370,6 +403,7 @@ int main(int argc, char* argv[])
     RFforest::Ptr f;
     Dataset::Ptr ds;
 
+    timer.time("Getting dataset");
     //ds = createTestDataset(10, 1);
     //testRFsplit(ds);
     //ds = createTestDataset(100, 4);
@@ -377,19 +411,29 @@ int main(int argc, char* argv[])
     //testForest(ds);
     //ds = openTestDataset("../data/ionosphere.csv");
     ds = openTestDataset("../data/iris.csv");
+
+    timer.time("Creating forest");
     f = testForest(ds);
 
+    timer.time("Serialising forest");
     const char fname[] = "serialise2.out";
     testSerialise(f, fname);
 
+    timer.time("Deserialising forest");
     RFforest::Ptr df = testDeserialise(fname);
 
+    timer.time("Serialising forest");
     // Serialise the deserialised tree, so that a diff can be run manually
     const char fnamedf[] = "serialise3.out";
     testSerialise(df, fnamedf);
 
+    timer.time("Comparing predictions");
     // Both forests should give the same predictions
     testPredict(ds, f, df);
+
+    timer.time("Finished");
+
+    printTimes(timer);
     return 0;
 }
 

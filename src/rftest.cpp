@@ -262,6 +262,63 @@ RFforest::Ptr testForest(const Dataset::Ptr data)
 }
 
 
+void testPredict(const Dataset::Ptr data, const RFforest::Ptr f1,
+                 const RFforest::Ptr f2)
+{
+    // Note: To check floating point saving/loading test ids[77] tree 8
+    // and ids[106] 
+    using std::cout;
+    using std::endl;
+
+    IdArray ids;
+    data->getIds(ids);
+    //ids.push_back(77);
+    //ids.push_back(106);
+
+    if (!f2)
+    {
+        std::vector<DoubleArray> preds1(ids.size());
+        f1->setDataset(data.get());
+
+        cout << '\n';
+        for (uint i = 0; i < ids.size(); ++i)
+        {
+            f1->predict(preds1[i], *data->getSample(ids[i]));
+            cout << "Prediction " << i << ":\t"
+                 << arrayToString(preds1[i]) << "\n";
+        }
+    }
+
+    if (f1 && f2)
+    {
+        std::vector<DoubleArray> preds1(ids.size()), preds2(ids.size());
+        f1->setDataset(data.get());
+        f2->setDataset(data.get());
+
+        cout << '\n';
+        for (uint i = 0; i < ids.size(); ++i)
+        {
+            f1->predict(preds1[i], *data->getSample(ids[i]));
+            f2->predict(preds2[i], *data->getSample(ids[i]));
+
+            bool b = Utils::equals<DoubleArray>(
+                preds1[i].begin(), preds1[i].end(),
+                preds2[i].begin(), preds2[i].end());
+
+            cout << "Predictions " << i << ":\t"
+                 << arrayToString(preds1[i]) << "\t"
+                 << arrayToString(preds2[i]) << "\t"
+                 << (b? "==" : "!=") << "\n";
+        }
+
+        bool b = Utils::array2equals<std::vector<DoubleArray> >(
+            preds1.begin(), preds1.end(),
+            preds2.begin(), preds2.end());
+        cout << "\npreds1 " << (b? "==" : "!=") << " preds2" << endl;
+    }
+
+}
+
 void testSerialise(RFforest::Ptr forest, const char fname[])
 {
     //std::cout << indent(80, '*') << std::endl;
@@ -331,6 +388,8 @@ int main(int argc, char* argv[])
     const char fnamedf[] = "serialise3.out";
     testSerialise(df, fnamedf);
 
+    // Both forests should give the same predictions
+    testPredict(ds, f, df);
     return 0;
 }
 

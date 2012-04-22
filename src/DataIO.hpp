@@ -9,6 +9,7 @@
 #include <sstream>
 #include <vector>
 #include "refcountptr.hpp"
+#include "RFtypes.hpp"
 #include "Logger.hpp"
 
 class Tokeniser

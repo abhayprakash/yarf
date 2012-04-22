@@ -10,6 +10,7 @@ default: debug
 debug: CPP_FLAGS += -g
 debug: rftest
 
+release: CPP_FLAGS += -O3
 release: rftest
 
 rftest:	$(RFTEST_SRCS) $(HEADERS)

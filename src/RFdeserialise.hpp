@@ -181,9 +181,6 @@ protected:
             ) == std::string::npos;
     }
 
-    void parseNumericArray(std::string s) {
-    }
-
 
     void resetToken(Token& tok) const {
         tok.type = ParseError;
@@ -222,6 +219,7 @@ protected:
     }
 
     void unread(std::string s) {
+        assert(m_last.empty());
         m_last = s;
     }
 

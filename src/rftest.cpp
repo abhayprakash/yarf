@@ -218,7 +218,7 @@ bool testRFnode(const Dataset::Ptr data)
     return true;
 }
 
-RefCountPtr<RFforest> testForest(const Dataset::Ptr data)
+RFforest::Ptr testForest(const Dataset::Ptr data)
 {
     using std::cout;
     using std::endl;
@@ -228,7 +228,7 @@ RefCountPtr<RFforest> testForest(const Dataset::Ptr data)
     params->numSplitFeatures = std::ceil(std::sqrt(data->numFeatures()));
     params->minScore = 1e-6;
 
-    RefCountPtr<RFforest> forest = new RFforest(data.get(), params);
+    RFforest::Ptr forest = new RFforest(data.get(), params);
 
     cout << indent(80, '*');
     for (uint i = 0; i < forest->numTrees(); ++i)
@@ -262,7 +262,7 @@ RefCountPtr<RFforest> testForest(const Dataset::Ptr data)
 }
 
 
-void testSerialise(RefCountPtr<RFforest> forest, const char fname[])
+void testSerialise(RFforest::Ptr forest, const char fname[])
 {
     //std::cout << indent(80, '*') << std::endl;
     std::ofstream fout(fname);
@@ -272,7 +272,7 @@ void testSerialise(RefCountPtr<RFforest> forest, const char fname[])
 }
 
 
-RefCountPtr<RFforest> testDeserialise(const char fname[])
+RFforest::Ptr testDeserialise(const char fname[])
 {
     using std::cout;
     //using std::cerr;
@@ -310,16 +310,26 @@ int main(int argc, char* argv[])
     //Log::reportingLevel() = Log::INFO;
     Log::reportingLevel() = Log::DEBUG2;
 
-    RefCountPtr<RFforest> f;
-    //testRFsplit(createTestDataset(10, 1));
-    //testRFnode(createTestDataset(100, 4));
-    //testForest(createTestDataset(100, 4));
-    //testForest(openTestDataset("../data/ionosphere.csv"));
-    f = testForest(openTestDataset("../data/iris.csv"));
+    RFforest::Ptr f;
+    Dataset::Ptr ds;
+
+    //ds = createTestDataset(10, 1);
+    //testRFsplit(ds);
+    //ds = createTestDataset(100, 4);
+    //testRFnode(ds);
+    //testForest(ds);
+    //ds = openTestDataset("../data/ionosphere.csv");
+    ds = openTestDataset("../data/iris.csv");
+    f = testForest(ds);
 
     const char fname[] = "serialise2.out";
     testSerialise(f, fname);
-    testDeserialise(fname);
+
+    RFforest::Ptr df = testDeserialise(fname);
+
+    // Serialise the deserialised tree, so that a diff can be run manually
+    const char fnamedf[] = "serialise3.out";
+    testSerialise(df, fnamedf);
 
     return 0;
 }

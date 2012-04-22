@@ -14,10 +14,6 @@
 #include "RFserialise.hpp"
 #include "Logger.hpp"
 
-// For the deserialisation
-#include <iomanip>
-#include <limits>
-
 
 /**
  * Interface for a class providing feature split selection
@@ -233,15 +229,9 @@ public:
                << in(i) << "splitpos " << m_splitpos << "\n";
         }
         // Note m_splitval is a feature value whose precision might matter
-        // http://stackoverflow.com/questions/4738768/printing-double-without-losing-precision
-        // TODO: Put in the stream manipulator instead
         os << in(i) << "ftid " << m_ftid << "\n"
            << in(i) << "counts " << arrayToString(m_counts) << "\n"
-           << in(i) << "splitval "
-           << std::scientific
-           << std::fixed
-           << std::setprecision(std::numeric_limits<double>::digits10 + 1)
-           << m_splitval << "\n"
+           << in(i) << "splitval " << strprecise(m_splitval) << "\n"
            << in(i) << "}MaxInfoGainSingleSplit\n";
     }
 

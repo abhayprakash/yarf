@@ -216,6 +216,7 @@ public:
         m_data(data), m_params(params) {
         m_trees.reserve(m_params->numTrees);
         for (uint i = 0; i < m_params->numTrees; ++i) {
+            LOG(Log::DEBUG1) << "Building tree " << i;
             m_trees.push_back(new RFtree(data, m_params));
         }
     }

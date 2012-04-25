@@ -120,10 +120,10 @@ Dataset::Ptr openTestDataset(const char fname[])
 
     for (uint c = 0; c < d->numFeatures(); ++c)
     {
-        LOG(Log::DEBUG1) << "ft " << c << "\t"
+        LOG(Log::DEBUG2) << "ft " << c << "\t"
                          << arrayToString(*d->getFeature(c));
     }
-    LOG(Log::DEBUG1) << "ls " << arrayToString(*d->getLabels());
+    LOG(Log::DEBUG2) << "ls " << arrayToString(*d->getLabels());
 
     return pd;
 }
@@ -221,7 +221,7 @@ bool testRFnode(const Dataset::Ptr data)
     return true;
 }
 
-RFforest::Ptr testForest(const Dataset::Ptr data)
+RFforest::Ptr testForest(const Dataset::Ptr data, bool show)
 {
     using std::cout;
     using std::endl;
@@ -234,10 +234,13 @@ RFforest::Ptr testForest(const Dataset::Ptr data)
     RFforest::Ptr forest = new RFforest(data.get(), params);
 
     cout << indent(80, '*');
-    for (uint i = 0; i < forest->numTrees(); ++i)
+    if (show)
     {
-        cout << "\nTree " << i << "\n";
-        printTree(*forest->getTree(i)->getRoot());
+        for (uint i = 0; i < forest->numTrees(); ++i)
+        {
+            cout << "\nTree " << i << "\n";
+            printTree(*forest->getTree(i)->getRoot());
+        }
     }
 
     std::vector<DoubleArray> treeErrs;
@@ -349,15 +352,19 @@ RFforest::Ptr testDeserialise(const char fname[])
     }
 
     RFbuilder builder(deserial);
-    RFforest::Ptr forest = builder.dRFforest(builder.nextToken());
+    RFforest::Ptr forest = builder.dRFforest();
     //RFtree::Ptr tree = builder.dRFtree(builder.nextToken());
 
+    // Check there isn't anything left in the file
     Deserialiser::Token token = deserial.next();
-    while (token.type != Deserialiser::ParseError) {
+    while (token.type != Deserialiser::ParseEof) {
+        if (token.type == Deserialiser::ParseError) {
+            LOG(Log::WARNING) << Deserialiser::toString(token) << endl;
+            break;
+        }
         cout << Deserialiser::toString(token) << endl;
         token = deserial.next();
     }
-    LOG(Log::WARNING) << Deserialiser::toString(token) << endl;
 
     return forest;
 }
@@ -398,7 +405,8 @@ int main(int argc, char* argv[])
     uint seed = 123;
     Utils::srand(seed);
     //Log::reportingLevel() = Log::INFO;
-    Log::reportingLevel() = Log::DEBUG2;
+    Log::reportingLevel() = Log::DEBUG1;
+    //Log::reportingLevel() = Log::DEBUG2;
 
     RFforest::Ptr f;
     Dataset::Ptr ds;
@@ -408,7 +416,7 @@ int main(int argc, char* argv[])
     //testRFsplit(ds);
     //ds = createTestDataset(100, 4);
     //testRFnode(ds);
-    //testForest(ds);
+    //testForest(ds, true);
 
     if (argc > 1)
     {
@@ -421,7 +429,7 @@ int main(int argc, char* argv[])
     }
 
     timer.time("Creating forest");
-    f = testForest(ds);
+    f = testForest(ds, true);
 
     timer.time("Serialising forest");
     const char fname[] = "serialise2.out";

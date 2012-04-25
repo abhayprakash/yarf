@@ -12,6 +12,8 @@
 #include <string>
 #include <sstream>
 
+#include "RFtypes.hpp"
+
 
 class Utils
 {

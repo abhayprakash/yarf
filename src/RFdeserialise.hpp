@@ -19,6 +19,7 @@ class Deserialiser
 public:
     enum Type {
         ParseError,
+        ParseEof,
         Scalar,
         EmptyArray,
         NumericArray,
@@ -41,6 +42,9 @@ public:
         switch (t.type) {
         case ParseError:
             oss << "ParseError";
+            break;
+        case ParseEof:
+            oss << "ParseEof";
             break;
         case Scalar:
             oss << "Scalar";
@@ -81,7 +85,7 @@ public:
         resetToken(m_tok);
         std::string s = read();
         if (s.empty()) {
-            // Failed
+            // Error or EOF
             return m_tok;
         }
 
@@ -90,7 +94,7 @@ public:
             s = read();
 
             if (s.empty()) {
-                // Failed
+                // Error or EOF
                 return m_tok;
             }
         }
@@ -209,6 +213,13 @@ protected:
 
         m_is >> s;
         if (!m_is) {
+            if(m_is.eof()) {
+                resetToken(m_tok);
+                m_tok.tag = "EOF after " + Tokeniser::toString(m_count) +
+                    "tokens";
+                m_tok.type = ParseEof;
+                return "";
+            }
             fail("Read failed");
         }
 
@@ -230,6 +241,10 @@ protected:
 };
 
 
+/**
+ * Constructs individual objects in the Random Forest
+ * TODO: Free memory if an error occurs
+ */
 class RFbuilder
 {
 public:
@@ -237,6 +252,10 @@ public:
 
     RFbuilder(D& deserialiser):
         m_deserialiser(deserialiser) {
+    }
+
+    RFforest* dRFforest() {
+        return dRFforest(nextToken());
     }
 
     D::Token nextToken() {

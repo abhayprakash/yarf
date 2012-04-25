@@ -11,7 +11,6 @@
 #include "RFserialise.hpp"
 #include "RFdeserialise.hpp"
 
-#include "output.hpp"
 #include "Logger.hpp"
 #include "ClockTimer.hpp"
 
@@ -129,8 +128,33 @@ Dataset::Ptr openTestDataset(const char fname[])
 }
 
 
+template<typename ContainerT1, typename ContainerT2>
+void printPermutedArray(const ContainerT1& xs,
+                        typename ContainerT2::const_iterator a,
+                        typename ContainerT2::const_iterator b)
+{
+    using std::cout;
+    using std::endl;
+
+    assert(b >= a && xs.size() >= uint(b - a));
+    cout << "[" << b - a << "] ";
+
+    for (typename ContainerT2::const_iterator p = a; p != b; ++p)
+    {
+        if (p != a)
+        {
+            cout << ",";
+        }
+        cout << xs[*p];
+    }
+    cout << endl;
+}
+
 bool testRFsplit(const Dataset::Ptr data)
 {
+    using std::cout;
+    using std::endl;
+
     FtvalArray fts;
     LabelArray ls;
     IdArray ids;
@@ -150,14 +174,19 @@ bool testRFsplit(const Dataset::Ptr data)
     double ig = s->getInfoGain();
     Ftval sv = s->getSplitValue();
 
+    cout << "fts\t";
     printPermutedArray<FtvalArray, UintArray>(fts, s->permLeft(), s->permRight());
+    cout << "ls\t";
     printPermutedArray<LabelArray, UintArray>(ls, s->permLeft(), s->permRight());
+    cout << "ids\t";
     printPermutedArray<IdArray, UintArray>(ids, s->permLeft(), s->permRight());
 
-    std::cout << arrayToString(s->getInfoGainArray())
-              << "IG: " << ig << " split-val: " << sv << std::endl;
+    cout << "IGs\t" << arrayToString(s->getInfoGainArray())
+              << "IG: " << ig << " split-val: " << sv << endl;
 
+    cout << "fts (left)\t";
     printPermutedArray<FtvalArray, UintArray>(fts, s->permLeft(), s->permMiddle());
+    cout << "fts (right)\t";
     printPermutedArray<FtvalArray, UintArray>(fts, s->permMiddle(), s->permRight());
 
     return true;

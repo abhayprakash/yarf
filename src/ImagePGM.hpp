@@ -166,6 +166,7 @@ public:
 
         os << im.xsize() << " " << im.ysize() << " ";
         // Max grey value
+        // TODO: For non-packbits mode this can be greater than 255
         os << 255 << "\n";
 
         if (packbits) {

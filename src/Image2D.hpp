@@ -47,7 +47,22 @@ public:
     /**
      * Access an element in form (x, y) or (column, row)
      */
+    virtual T at(uint x, uint y) const {
+        assert(x < m_nx && y < m_ny);
+        return m_im[y * m_nx + x];
+    }
+
+    /**
+     * Access an element in form (x, y) or (column, row)
+     */
     virtual T operator()(uint x, uint y) const {
+        return at(x, y);
+    }
+
+    /**
+     * Access an element in form (x, y) or (column, row)
+     */
+    virtual T& at(uint x, uint y) {
         assert(x < m_nx && y < m_ny);
         return m_im[y * m_nx + x];
     }
@@ -56,7 +71,24 @@ public:
      * Access an element in form (x, y) or (column, row)
      */
     virtual T& operator()(uint x, uint y) {
-        assert(x < m_nx && y < m_ny);
+        return at(x, y);
+    }
+
+    /**
+     * Access an element by linear index, using row-major order
+     */
+    virtual T linearByRow(uint n) const {
+        assert(n < m_nx * m_ny);
+        return m_im[n];
+    }
+
+    /**
+     * Access an element by linear index, using column-major order
+     */
+    virtual T linearByColumn(uint n) const {
+        assert(n < m_nx * m_ny);
+        uint y = n / m_ny;
+        uint x = n - y * m_ny;
         return m_im[y * m_nx + x];
     }
 

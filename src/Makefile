@@ -28,7 +28,7 @@ rftest:	$(RFTEST_SRCS) $(HEADERS)
 	$(CXX) $(CPP_FLAGS) $(CPP_BUILD_FLAGS) $(RFTEST_SRCS) -o $@
 
 imtest:	$(IMTEST_SRCS) $(HEADERS)
-	$(CXX) $(CPP_FLAGS) $(CPP_BUILD_FLAGS) $(IMTEST_SRCS) -o $@ -g
+	$(CXX) $(CPP_FLAGS) $(CPP_BUILD_FLAGS) $(IMTEST_SRCS) -o $@
 
 clean:
 	rm -f rftest imtest $(GCHS)

@@ -122,6 +122,12 @@ private:
 };
 
 
+/**
+ * An integral image.
+ * (x,y) is the cumulative sum of all pixels in the region (0,0) to (x-1,y-1)
+ * The integral image therefore has dimensions (X+1,Y+1) where X and Y are the
+ * dimensions of the input image
+ */
 template <typename T>
 class IntegralImage: public Image2D<T>
 {
@@ -135,8 +141,7 @@ public:
      */
     template <typename InputT>
     IntegralImage(const Image2D<InputT>& im):
-        Image2D<T>(im.xsize(), im.ysize()) {
-        assert(im.xsize() > 0 && im.ysize() > 0);
+        Image2D<T>(im.xsize() + 1, im.ysize() + 1) {
         integrate(im);
     }
 
@@ -147,19 +152,17 @@ protected:
     template <typename InputT>
     void integrate(const Image2D<InputT>& im) {
         Image2D<T>& a = *this;
-        a(0, 0) = 0;
-
-        for (uint x = 1; x < a.xsize(); ++x) {
-            a(x, 0) = a(x - 1, 0) + im(x, 0);
+        for (uint x = 0; x < a.xsize(); ++x) {
+            a(x, 0) = 0;
         }
-
         for (uint y = 1; y < a.ysize(); ++y) {
-            a(0, y) = a(0, y - 1) + im(0, y);
+            a(0, y) = 0;
         }
 
         for (uint y = 1; y < a.ysize(); ++y) {
             for (uint x = 1; x < a.xsize(); ++x) {
-                a(x, y) = a(x - 1, y) + a(x, y - 1) + im(x, y);
+                a(x, y) = a(x - 1, y) + a(x, y - 1) - a(x - 1, y - 1) +
+                    im(x - 1, y - 1);
             }
         }
     }

@@ -4,6 +4,7 @@
 #ifndef YARF_RFTYPES_HPP
 #define YARF_RFTYPES_HPP
 
+#include <string>
 #include <vector>
 #include "refcountptr.hpp"
 
@@ -18,5 +19,6 @@ typedef std::vector<uint> UintArray;
 typedef std::vector<double> DoubleArray;
 typedef std::vector<Id> IdArray;
 
+typedef std::vector<std::string> StringArray;
 
 #endif // YARF_RFTYPES_HPP

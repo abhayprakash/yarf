@@ -63,19 +63,43 @@ void testHaarFeature(const char imageFile[], const char labelFile[])
     printImage(cout, integral, 0, 0, 5, 5);
 
     StringArray ftnames;
-    ftnames.push_back("N_1_2_2");
-    ftnames.push_back("S_2_1_2");
-    ftnames.push_back("E_1_2_2");
-    ftnames.push_back("W_2_1_2");
+    ftnames.push_back("Haar2DRect2_N_1_2_2");
+    ftnames.push_back("Haar2DRect2_S_2_1_2");
+    ftnames.push_back("Haar2DRect2_E_1_2_2");
+    ftnames.push_back("Haar2DRect2_W_2_1_2");
+
+    ftnames.push_back("Haar2DRect4_N_1_2_2_0");
+    ftnames.push_back("Haar2DRect4_S_2_1_2_0");
+    ftnames.push_back("Haar2DRect4_N_1_2_0_2");
+    ftnames.push_back("Haar2DRect4_S_2_1_0_2");
+
+    ftnames.push_back("Haar2DRect4_E_1_2_2_0");
+    ftnames.push_back("Haar2DRect4_W_2_1_2_0");
+    ftnames.push_back("Haar2DRect4_E_1_2_0_2");
+    ftnames.push_back("Haar2DRect4_W_2_1_0_2");
     HaarFeatureManager<ImageT> ftman(ftnames);
 
     cout << "Border width: " << ftman.borderWidth() << endl;
 
-    Ftval dn = ftman.getFeature(integral, 0, 2, 2);
-    Ftval ds = ftman.getFeature(integral, 1, 2, 2);
-    Ftval de = ftman.getFeature(integral, 2, 2, 2);
-    Ftval dw = ftman.getFeature(integral, 3, 2, 2);
-    cout << "fts: " << dn << " " << ds << " " << de << " " << dw << endl;
+    Ftval d2n = ftman.getFeature(integral, 0, 2, 2);
+    Ftval d2s = ftman.getFeature(integral, 1, 2, 2);
+    Ftval d2e = ftman.getFeature(integral, 2, 2, 2);
+    Ftval d2w = ftman.getFeature(integral, 3, 2, 2);
+    cout << "fts: " << d2n << " " << d2s << " " << d2e << " " << d2w << endl;
+
+    Ftval d4n1 = ftman.getFeature(integral, 4, 2, 2);
+    Ftval d4s1 = ftman.getFeature(integral, 5, 2, 2);
+    Ftval d4n2 = ftman.getFeature(integral, 6, 2, 2);
+    Ftval d4s2 = ftman.getFeature(integral, 7, 2, 2);
+    cout << "fts: " << d4n1 << " " << d4s1 << " "
+         << d4n2 << " " << d4s2 << endl;
+
+    Ftval d4e1 = ftman.getFeature(integral, 8, 2, 2);
+    Ftval d4w1 = ftman.getFeature(integral, 9, 2, 2);
+    Ftval d4e2 = ftman.getFeature(integral, 10, 2, 2);
+    Ftval d4w2 = ftman.getFeature(integral, 11, 2, 2);
+    cout << "fts: " << d4e1 << " " << d4w1 << " "
+         << d4e2 << " " << d4w2 << endl;
 }
 
 
@@ -85,11 +109,20 @@ void getFeatureNames(StringArray& ftnames)
     for (uint i = 0; i < 4; ++i)
     {
         std::ostringstream os;
-        os << "N_" << e[i] / 2 << '_' << e[i] / 2 << '_' << e[i];
+        os << "Haar2DRect2_" << "N_"
+           << e[i] / 2 << '_' << e[i] / 2 << '_' << e[i];
         ftnames.push_back(os.str());
+
         os.clear();
         os.str("");
-        os << "W_" << e[i] / 2 << '_' << e[i] / 2 << '_' << e[i];
+        os << "Haar2DRect2_" << "W_"
+           << e[i] / 2 << '_' << e[i] / 2 << '_' << e[i];
+        ftnames.push_back(os.str());
+
+        os.clear();
+        os.str("");
+        os << "Haar2DRect4_" << "N_"
+           << e[i] / 2 << '_' << e[i] / 2 << '_' << e[i] / 2 << '_' << e[i] / 2;
         ftnames.push_back(os.str());
     }
 }
@@ -214,7 +247,7 @@ int main(int argc, char* argv[])
     //testRead("foo.pgm");
     //testRead("segtest-input-sm2.pgm");
     //testRead("segtest-label-sm2.pbm");
-    //testHaarFeature("segtest-input-sm2.pgm", "segtest-label-sm2.pbm");
+    testHaarFeature("segtest-input-sm2.pgm", "segtest-label-sm2.pbm");
     Dataset::Ptr data = getDataset(
         "segtest-input-sm2.pgm", "segtest-label-sm2.pbm");
     RFforest::Ptr forest = testForest(data, true);

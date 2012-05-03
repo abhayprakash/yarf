@@ -55,16 +55,16 @@ std::string strprecise(const T& x)
 
 template<typename ContainerT>
 std::string arrayToString(const ContainerT& xs, bool printSize = true,
-                          uint p1 = 0, uint p2 = -1)
+                          size_t p1 = 0, size_t p2 = -1)
 {
     std::ostringstream oss;
 
-    p2 = std::min(xs.size(), p2);
+    p2 = std::min<size_t>(xs.size(), p2);
     if (printSize) {
         oss << "[" << p2 - p1 << "] ";
     }
 
-    for (uint p = p1; p < p2; ++p)
+    for (size_t p = p1; p < p2; ++p)
     {
         if (p > p1)
         {

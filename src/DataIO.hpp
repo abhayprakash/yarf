@@ -156,12 +156,12 @@ private:
     /**
      * Index of the next token
      */
-    uint m_p;
+    size_t m_p;
 
     /**
      * Index of one past the end of the next token
      */
-    uint m_q;
+    size_t m_q;
 
     /**
      * Has the last token been taken yet?

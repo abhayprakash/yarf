@@ -22,7 +22,7 @@
 #include <algorithm>
 #include <functional>
 
-
+#include "FileLogger.h"
 
 void createTestData(FtvalArray& fts, LabelArray& ls, IdArray& ids, uint& ncls)
 {
@@ -262,35 +262,6 @@ RFforest::Ptr testForest(const Dataset::Ptr data, bool show, int NUMTREE)
 
     RFforest::Ptr forest = new RFforest(data.get(), params);
 
-    if (show)
-    {
-        for (uint i = 0; i < forest->numTrees(); ++i)
-        {
-            cout << "\nTree " << i << "\n";
-            printTree(*forest->getTree(i)->getRoot());
-        }
-
-        std::vector<DoubleArray> treeErrs;
-        DoubleArray oobErr;
-        forest->oobErrors(oobErr, treeErrs);
-        cout << '\n';
-        for (uint i = 0; i < treeErrs.size(); ++i)
-        {
-            cout << "OOB error tree " << i << ":\t"
-                 << arrayToString(treeErrs[i]) << "\n";
-        }
-        cout << "\nOOB error: " << arrayToString(oobErr) << endl;
-
-        std::vector<DoubleArray> treeImps;
-        DoubleArray imp;
-        forest->varImp(imp, treeImps);
-        for (uint i = 0; i < treeImps.size(); ++i)
-        {
-            cout << "Feature importance tree " << i << ":\t"
-                 << arrayToString(treeImps[i]) << "\n";
-        }
-        cout << "\nFeature importance: " << arrayToString(imp) << endl;
-    }
     return forest;
 }
 
@@ -323,6 +294,9 @@ void printTimes(const ClockTimer& timer)
 
 void predictClass(const Dataset::Ptr data, const RFforest::Ptr f)
 {
+    char result_file[256] = "./predicted_result";
+    FileLogger logger(result_file, 512*1024*1024ull, 4);
+
     using std::cout;
     using std::endl;
 
@@ -338,8 +312,8 @@ void predictClass(const Dataset::Ptr data, const RFforest::Ptr f)
     for (uint i = 0; i < ids.size(); ++i)
     {
         f->predict(preds1[i], *data->getSample(ids[i]));
-
-        cout << getClass_MaxProb(preds1[i]) << "\n";
+        //cout << getClass_MaxProb(preds1[i]) << "\n";
+        logger.logResult(getClass_MaxProb(preds1[i]));
     }
 }
 
@@ -358,11 +332,9 @@ int main(int argc, char* argv[])
 
     timer.time("Getting dataset");
 
-    int numTree;
+    int numTree = 10;
     if (argc > 1)
-    {
         ds = openTestDataset(argv[1]);
-    }
     else
     {
         //ds = openTestDataset("../data/ionosphere.csv");
@@ -373,10 +345,7 @@ int main(int argc, char* argv[])
     if(argc > 2)
     {
         numTree = atoi(argv[2]);
-    }
-    else
-    {
-        numTree = 10;
+        printf("n trees: %d\n", numTree);
     }
 
     timer.time("Creating forest");

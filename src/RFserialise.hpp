@@ -77,7 +77,7 @@ std::string arrayToString(const ContainerT& xs, bool printSize = true,
 }
 
 template<typename ContainerT>
-std::string getClass_MaxProb(const ContainerT& xs, size_t p1 = 0, size_t p2 = -1)
+std::size_t getClass_MaxProb(const ContainerT& xs, size_t p1 = 0, size_t p2 = -1)
 {
     std::ostringstream oss;
 
@@ -89,9 +89,7 @@ std::string getClass_MaxProb(const ContainerT& xs, size_t p1 = 0, size_t p2 = -1
         if(xs[p] >= xs[mx_p])
             mx_p = p;
     }
-    oss<<mx_p;
-
-    return oss.str();
+    return mx_p;
 }
 
 

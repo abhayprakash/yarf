@@ -76,6 +76,23 @@ std::string arrayToString(const ContainerT& xs, bool printSize = true,
     return oss.str();
 }
 
+template<typename ContainerT>
+std::string getClass_MaxProb(const ContainerT& xs, size_t p1 = 0, size_t p2 = -1)
+{
+    std::ostringstream oss;
+
+    p2 = std::min<size_t>(xs.size(), p2);
+
+    size_t mx_p = p1;
+    for (size_t p = p1; p < p2; ++p)
+    {
+        if(xs[p] >= xs[mx_p])
+            mx_p = p;
+    }
+    oss<<mx_p;
+
+    return oss.str();
+}
 
 
 #endif // YARF_RFSERIALISE_HPP

@@ -102,7 +102,7 @@ Dataset::Ptr openTestDataset(const char fname[])
         exit(1);
     }
 
-    // Class label should be in the last column
+    // Class label(ground truth) should be in the last column
     SingleMatrixDataset* d = new SingleMatrixDataset(
         csv.rows(), csv.cols() - 1);
     Dataset::Ptr pd(d);
@@ -250,19 +250,18 @@ bool testRFnode(const Dataset::Ptr data)
     return true;
 }
 
-RFforest::Ptr testForest(const Dataset::Ptr data, bool show)
+RFforest::Ptr testForest(const Dataset::Ptr data, bool show, int NUMTREE)
 {
     using std::cout;
     using std::endl;
 
     RFparameters::Ptr params = new RFparameters;
-    params->numTrees = 10;
+    params->numTrees = NUMTREE;
     params->numSplitFeatures = std::ceil(std::sqrt(data->numFeatures()));
     params->minScore = 1e-6;
 
     RFforest::Ptr forest = new RFforest(data.get(), params);
 
-    cout << indent(80, '*');
     if (show)
     {
         for (uint i = 0; i < forest->numTrees(); ++i)
@@ -270,134 +269,30 @@ RFforest::Ptr testForest(const Dataset::Ptr data, bool show)
             cout << "\nTree " << i << "\n";
             printTree(*forest->getTree(i)->getRoot());
         }
-    }
 
-    std::vector<DoubleArray> treeErrs;
-    DoubleArray oobErr;
-    forest->oobErrors(oobErr, treeErrs);
-    cout << '\n';
-    for (uint i = 0; i < treeErrs.size(); ++i)
-    {
-        cout << "OOB error tree " << i << ":\t"
-             << arrayToString(treeErrs[i]) << "\n";
-    }
-    cout << "\nOOB error: " << arrayToString(oobErr) << endl;
+        std::vector<DoubleArray> treeErrs;
+        DoubleArray oobErr;
+        forest->oobErrors(oobErr, treeErrs);
+        cout << '\n';
+        for (uint i = 0; i < treeErrs.size(); ++i)
+        {
+            cout << "OOB error tree " << i << ":\t"
+                 << arrayToString(treeErrs[i]) << "\n";
+        }
+        cout << "\nOOB error: " << arrayToString(oobErr) << endl;
 
-    std::vector<DoubleArray> treeImps;
-    DoubleArray imp;
-    forest->varImp(imp, treeImps);
-    for (uint i = 0; i < treeImps.size(); ++i)
-    {
-        cout << "Feature importance tree " << i << ":\t"
-             << arrayToString(treeImps[i]) << "\n";
+        std::vector<DoubleArray> treeImps;
+        DoubleArray imp;
+        forest->varImp(imp, treeImps);
+        for (uint i = 0; i < treeImps.size(); ++i)
+        {
+            cout << "Feature importance tree " << i << ":\t"
+                 << arrayToString(treeImps[i]) << "\n";
+        }
+        cout << "\nFeature importance: " << arrayToString(imp) << endl;
     }
-    cout << "\nFeature importance: " << arrayToString(imp) << endl;
-
     return forest;
 }
-
-
-void testPredict(const Dataset::Ptr data, const RFforest::Ptr f1,
-                 const RFforest::Ptr f2)
-{
-    // Note: To check floating point saving/loading test ids[77] tree 8
-    // and ids[106] 
-    using std::cout;
-    using std::endl;
-
-    IdArray ids;
-    data->getIds(ids);
-    //ids.push_back(77);
-    //ids.push_back(106);
-
-    if (!f2)
-    {
-        std::vector<DoubleArray> preds1(ids.size());
-        f1->setDataset(data.get());
-
-        cout << '\n';
-        for (uint i = 0; i < ids.size(); ++i)
-        {
-            f1->predict(preds1[i], *data->getSample(ids[i]));
-            cout << "Prediction " << i << ":\t"
-                 << arrayToString(preds1[i]) << "\n";
-        }
-    }
-
-    if (f1 && f2)
-    {
-        std::vector<DoubleArray> preds1(ids.size()), preds2(ids.size());
-        f1->setDataset(data.get());
-        f2->setDataset(data.get());
-
-        cout << '\n';
-        for (uint i = 0; i < ids.size(); ++i)
-        {
-            f1->predict(preds1[i], *data->getSample(ids[i]));
-            f2->predict(preds2[i], *data->getSample(ids[i]));
-
-            bool b = Utils::equals<DoubleArray>(
-                preds1[i].begin(), preds1[i].end(),
-                preds2[i].begin(), preds2[i].end());
-
-            cout << "Predictions " << i << ":\t"
-                 << arrayToString(preds1[i]) << "\t"
-                 << arrayToString(preds2[i]) << "\t"
-                 << (b? "==" : "!=") << "\n";
-        }
-
-        bool b = Utils::array2equals<std::vector<DoubleArray> >(
-            preds1.begin(), preds1.end(),
-            preds2.begin(), preds2.end());
-        cout << "\npreds1 " << (b? "==" : "!=") << " preds2" << endl;
-    }
-
-}
-
-void testSerialise(RFforest::Ptr forest, const char fname[])
-{
-    //std::cout << indent(80, '*') << std::endl;
-    std::ofstream fout(fname);
-
-    //forest->getTree(0)->serialise(fout, 2, 0);
-    forest->serialise(fout, 2, 0);
-}
-
-
-RFforest::Ptr testDeserialise(const char fname[])
-{
-    using std::cout;
-    //using std::cerr;
-    using std::endl;
-
-    //cout << indent(80, '*') << endl;
-    std::ifstream fin(fname);
-
-    Deserialiser deserial(fin);
-    if (!fin)
-    {
-        LOG(Log::ERROR) << "Failed to open " << fname << endl;
-        return NULL;
-    }
-
-    RFbuilder builder(deserial);
-    RFforest::Ptr forest = builder.dRFforest();
-    //RFtree::Ptr tree = builder.dRFtree(builder.nextToken());
-
-    // Check there isn't anything left in the file
-    Deserialiser::Token token = deserial.next();
-    while (token.type != Deserialiser::ParseEof) {
-        if (token.type == Deserialiser::ParseError) {
-            LOG(Log::WARNING) << Deserialiser::toString(token) << endl;
-            break;
-        }
-        cout << Deserialiser::toString(token) << endl;
-        token = deserial.next();
-    }
-
-    return forest;
-}
-
 
 void printTimes(const ClockTimer& timer)
 {
@@ -426,12 +321,33 @@ void printTimes(const ClockTimer& timer)
     cout << endl;
 }
 
+void predictClass(const Dataset::Ptr data, const RFforest::Ptr f)
+{
+    using std::cout;
+    using std::endl;
+
+    IdArray ids;
+    data->getIds(ids);
+
+    std::vector<DoubleArray> preds1(ids.size());
+    f->setDataset(data.get());
+
+    int result;
+    double mx = -1;
+
+    for (uint i = 0; i < ids.size(); ++i)
+    {
+        f->predict(preds1[i], *data->getSample(ids[i]));
+
+        cout << getClass_MaxProb(preds1[i]) << "\n";
+    }
+}
 
 int main(int argc, char* argv[])
 {
     ClockTimer timer;
 
-    uint seed = 123;
+    uint seed = 25; // not time(0) to make results reproducible
     Utils::srand(seed);
     //Log::reportingLevel() = Log::INFO;
     Log::reportingLevel() = Log::DEBUG1;
@@ -441,12 +357,8 @@ int main(int argc, char* argv[])
     Dataset::Ptr ds;
 
     timer.time("Getting dataset");
-    //ds = createTestDataset(10, 1);
-    //testRFsplit(ds);
-    //ds = createTestDataset(100, 4);
-    //testRFnode(ds);
-    //testForest(ds, true);
 
+    int numTree;
     if (argc > 1)
     {
         ds = openTestDataset(argv[1]);
@@ -455,29 +367,25 @@ int main(int argc, char* argv[])
     {
         //ds = openTestDataset("../data/ionosphere.csv");
         ds = openTestDataset("../data/iris.csv");
+        //ds = openTestDataset("../data/feature_train.csv");
+    }
+
+    if(argc > 2)
+    {
+        numTree = atoi(argv[2]);
+    }
+    else
+    {
+        numTree = 10;
     }
 
     timer.time("Creating forest");
-    f = testForest(ds, true);
+    f = testForest(ds, false, numTree);
 
-    timer.time("Serialising forest");
-    const char fname[] = "serialise2.out";
-    testSerialise(f, fname);
-
-    timer.time("Deserialising forest");
-    RFforest::Ptr df = testDeserialise(fname);
-
-    timer.time("Serialising forest");
-    // Serialise the deserialised tree, so that a diff can be run manually
-    const char fnamedf[] = "serialise3.out";
-    testSerialise(df, fnamedf);
-
-    timer.time("Comparing predictions");
-    // Both forests should give the same predictions
-    testPredict(ds, f, df);
+    timer.time("Prediction");
+    predictClass(ds, f);
 
     timer.time("Finished");
-
     printTimes(timer);
     return 0;
 }
